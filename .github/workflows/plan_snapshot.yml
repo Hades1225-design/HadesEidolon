@@ -9,44 +9,61 @@ on:
       - "logs/**"
   workflow_dispatch:
 
+# 允許此 workflow 寫入內容（必要）
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          # 取得完整歷史，避免某些比較/合併操作失敗
+          fetch-depth: 0
 
       - name: Compose plan snapshot
         run: |
-          echo "# Hades X Eidolon 共同創作" > progress/plan-snapshot.md
-          echo "" >> progress/plan-snapshot.md
-          echo "## 來源" >> progress/plan-snapshot.md
-          echo "- README.md（計劃說明）" >> progress/plan-snapshot.md
-          echo "- progress/today.md" >> progress/plan-snapshot.md
-          echo "- progress/current.md" >> progress/plan-snapshot.md
-          echo "- progress/completed.md" >> progress/plan-snapshot.md
-          echo "- progress/backlog.md" >> progress/plan-snapshot.md
-          echo "" >> progress/plan-snapshot.md
+          mkdir -p progress
+          {
+            echo "# Hades X Eidolon 共同創作"
+            echo
+            echo "## 來源"
+            echo "- README.md（計劃說明）"
+            echo "- progress/today.md"
+            echo "- progress/current.md"
+            echo "- progress/completed.md"
+            echo "- progress/backlog.md"
+            echo
+            echo "## 今日計劃"
+            if [ -f progress/today.md ]; then cat progress/today.md; else echo "_(無 today.md)_"; fi
+            echo
+            echo "## 目前進行中"
+            if [ -f progress/current.md ]; then cat progress/current.md; else echo "_(無 current.md)_"; fi
+            echo
+            echo "## 已完成"
+            if [ -f progress/completed.md ]; then cat progress/completed.md; else echo "_(無 completed.md)_"; fi
+            echo
+            echo "## 待辦清單"
+            if [ -f progress/backlog.md ]; then cat progress/backlog.md; else echo "_(無 backlog.md)_"; fi
+          } > progress/plan-snapshot.md
 
-          echo "## 今日計劃" >> progress/plan-snapshot.md
-          [ -f progress/today.md ] && cat progress/today.md >> progress/plan-snapshot.md || echo "_(無 today.md)_" >> progress/plan-snapshot.md
-          echo "" >> progress/plan-snapshot.md
-
-          echo "## 目前進行中" >> progress/plan-snapshot.md
-          [ -f progress/current.md ] && cat progress/current.md >> progress/plan-snapshot.md || echo "_(無 current.md)_" >> progress/plan-snapshot.md
-          echo "" >> progress/plan-snapshot.md
-
-          echo "## 已完成" >> progress/plan-snapshot.md
-          [ -f progress/completed.md ] && cat progress/completed.md >> progress/plan-snapshot.md || echo "_(無 completed.md)_" >> progress/plan-snapshot.md
-          echo "" >> progress/plan-snapshot.md
-
-          echo "## 待辦清單" >> progress/plan-snapshot.md
-          [ -f progress/backlog.md ] && cat progress/backlog.md >> progress/plan-snapshot.md || echo "_(無 backlog.md)_" >> progress/plan-snapshot.md
-
-      - name: Commit snapshot (if changed)
+      - name: Configure git & auth
         run: |
-          git config user.name "actions-bot"
-          git config user.email "actions@users.noreply.github.com"
+          git config --global user.name  "github-actions[bot]"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          # 用 GITHUB_TOKEN 重新設定遠端（避免權限 128）
+          git remote set-url origin \
+            https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }}.git
+
+      - name: Commit snapshot (only when changed)
+        run: |
           git add progress/plan-snapshot.md
-          git diff --cached --quiet || git commit -m "chore: update plan-snapshot"
-          git push
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+          else
+            git commit -m "chore: update plan-snapshot"
+            git push origin HEAD:main
+          fi
