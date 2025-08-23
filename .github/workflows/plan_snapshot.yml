@@ -1,0 +1,52 @@
+name: Build Plan Snapshot
+
+on:
+  push:
+    branches: [ "main" ]
+    paths:
+      - "README.md"
+      - "progress/**"
+      - "logs/**"
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Compose plan snapshot
+        run: |
+          echo "# Hades X Eidolon 共同創作" > progress/plan-snapshot.md
+          echo "" >> progress/plan-snapshot.md
+          echo "## 來源" >> progress/plan-snapshot.md
+          echo "- README.md（計劃說明）" >> progress/plan-snapshot.md
+          echo "- progress/today.md" >> progress/plan-snapshot.md
+          echo "- progress/current.md" >> progress/plan-snapshot.md
+          echo "- progress/completed.md" >> progress/plan-snapshot.md
+          echo "- progress/backlog.md" >> progress/plan-snapshot.md
+          echo "" >> progress/plan-snapshot.md
+
+          echo "## 今日計劃" >> progress/plan-snapshot.md
+          [ -f progress/today.md ] && cat progress/today.md >> progress/plan-snapshot.md || echo "_(無 today.md)_" >> progress/plan-snapshot.md
+          echo "" >> progress/plan-snapshot.md
+
+          echo "## 目前進行中" >> progress/plan-snapshot.md
+          [ -f progress/current.md ] && cat progress/current.md >> progress/plan-snapshot.md || echo "_(無 current.md)_" >> progress/plan-snapshot.md
+          echo "" >> progress/plan-snapshot.md
+
+          echo "## 已完成" >> progress/plan-snapshot.md
+          [ -f progress/completed.md ] && cat progress/completed.md >> progress/plan-snapshot.md || echo "_(無 completed.md)_" >> progress/plan-snapshot.md
+          echo "" >> progress/plan-snapshot.md
+
+          echo "## 待辦清單" >> progress/plan-snapshot.md
+          [ -f progress/backlog.md ] && cat progress/backlog.md >> progress/plan-snapshot.md || echo "_(無 backlog.md)_" >> progress/plan-snapshot.md
+
+      - name: Commit snapshot (if changed)
+        run: |
+          git config user.name "actions-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add progress/plan-snapshot.md
+          git diff --cached --quiet || git commit -m "chore: update plan-snapshot"
+          git push
