@@ -1,2 +1,3 @@
-# HadesEidolon
-2025-08-23 開始的第一頁
+# HadesEidolon 專案總覽
+- logs/：每日計劃與備忘
+- ...
