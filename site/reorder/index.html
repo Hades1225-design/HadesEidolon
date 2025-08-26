@@ -40,9 +40,9 @@
     .card{
       background: var(--card-bg);
       border: 1px solid var(--border);
-      border-radius: 10px;
-      width: 180px;
-      height: 45px;
+      border-radius: 5px;
+      width: 190px;
+      height: 40px;
       padding: 10px 12px;
       margin: 0 auto;
       display: flex;
@@ -101,8 +101,8 @@
       background:#fff;
     }
     .export-table td{
-      width: 216px;                 /* 單格寬（對齊卡片）*/
-      height: 96px;                 /* 單格高（對齊卡片）*/
+      width: 190px;                 /* 單格寬（對齊卡片）*/
+      height: 40px;                 /* 單格高（對齊卡片）*/
       border: 1px solid var(--border);
       vertical-align: middle;
       text-align: center;
@@ -317,8 +317,8 @@
     // 臨時切成 30 欄 Grid
     target.classList.add('export-grid'); // 這個 class 不在 CSS；直接用內嵌 style 控制：
     target.style.display = "grid";
-    target.style.gridTemplateColumns = "repeat(10, 216px)";
-    target.style.gridAutoRows = "96px";
+    target.style.gridTemplateColumns = "repeat(5, 190px)";
+    target.style.gridAutoRows = "40px";
     target.style.gap = "8px";
     Array.from(target.children).forEach(el => { el.style.margin = "0"; });
 
