@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>拖曳排序 · TXT / JSON 編輯器</title>
+  <meta name="description" content="在瀏覽器內讀寫 .txt / .json，滑鼠拖曳排序並匯出或儲存到遠端" />
+  <link rel="stylesheet" href="./style.css" />
+</head>
+<body>
+  <header>
+    <div class="container">
+      <h1>拖曳排序 · TXT / JSON 編輯器</h1>
+      <div class="toolbar">
+        <label class="button" for="file">讀取檔案 (.txt / .json)</label>
+        <input id="file" type="file" accept=".txt,.json,application/json,text/plain" />
+        <button id="add">新增一列</button>
+        <button id="alphasort">A→Z 排序</button>
+        <button id="download-json">下載 JSON</button>
+        <button id="download-txt">下載 TXT</button>
+        <button id="save-remote">儲存到遠端</button>
+        <span id="meta" class="muted"></span>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <div class="container">
+      <div class="row">
+        <label class="muted">資料模式：</label>
+        <select id="mode">
+          <option value="txt">TXT（每行一筆）</option>
+          <option value="json">JSON（陣列）</option>
+        </select>
+
+        <label class="muted">顯示欄位（JSON）：</label>
+        <select id="json-key" disabled></select>
+
+        <label class="muted">搜尋：</label>
+        <input id="q" type="text" placeholder="輸入關鍵字過濾…" />
+      </div>
+
+      <div id="list" class="list" aria-live="polite"></div>
+
+      <div class="help muted">
+        <p>使用方式：</p>
+        <ul>
+          <li>讀取 <code>.txt</code>（一行一筆）或 <code>.json</code>（<code>[ ... ]</code> 陣列）。</li>
+          <li>用左側 <code>≡</code> 拖曳上下移動排序；點 <code>刪除</code> 可移除一筆。</li>
+          <li>完成後可下載檔案，或直接點「儲存到遠端」送回 GitHub。</li>
+        </ul>
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    <div class="container muted">© 2025 Hades · 純前端，資料只會寫回 GitHub</div>
+  </footer>
+
+  <script type="module" src="./app.js"></script>
+</body>
+</html>
