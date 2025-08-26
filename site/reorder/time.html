@@ -25,13 +25,9 @@
     <div class="container">
       <h1>時間編輯器（24H HHmm） · <code>public/data.json</code></h1>
       <div class="toolbar">
-        <button id="set-all-now">全部設為現在</button>
-        <button id="clear-all">全部清空時間</button>
-        <button id="sort-asc">時間排序（舊→新）</button>
-        <button id="sort-desc">時間排序（新→舊）</button>
         <button id="reload">重新讀取</button>
         <button id="save">儲存到遠端</button>
-        <a href="./index.html" style="margin-left:auto">← 回名字編輯器</a>
+        <a href="./name.html" style="margin-left:auto">← 回名字編輯器</a>
         <span id="meta" class="muted" aria-live="polite"></span>
       </div>
     </div>
@@ -44,7 +40,7 @@
       </thead>
       <tbody id="tbody"></tbody>
     </table>
-    <p class="muted">本頁只修改 <b>時間</b>；名字僅顯示，不可編輯。</p>
+    <p class="muted">本頁只修改 <b>時間</b>；名字僅顯示不可編輯。輸入 4 位數（例如 <code>2231</code>），或用「現在／清空」。</p>
   </main>
 
   <script type="module" src="./app-time.js"></script>
