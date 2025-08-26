@@ -4,19 +4,50 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>拖曳排序 · TXT / JSON 編輯器</title>
-  <meta name="description" content="在瀏覽器內讀寫 .txt / .json，滑鼠拖曳排序並匯出或儲存到遠端" />
+  <meta name="description" content="在瀏覽器內讀寫 .txt / .json，滑鼠/觸控拖曳排序並匯出或儲存到遠端" />
   <link rel="stylesheet" href="./style.css" />
+  <style>
+    /* 若沒有 style.css，也有基本可用樣式（可刪） */
+    :root{ --border:#e5e7eb; --muted:#6b7280; --radius:12px }
+    *{ box-sizing:border-box }
+    body{ font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "PingFang TC", "Microsoft JhengHei", sans-serif; margin:0; color:#111; background:#fff }
+    header{ position:sticky; top:0; z-index:10; background:#ffffffcc; backdrop-filter:saturate(140%) blur(6px); border-bottom:1px solid var(--border) }
+    .container{ max-width:960px; margin:0 auto; padding:16px }
+    h1{ margin:0 0 10px; font-size:20px }
+    .toolbar{ display:flex; gap:10px; flex-wrap:wrap; align-items:center }
+    input[type="file"]{ display:none }
+    .button,button{ padding:9px 14px; border:1px solid var(--border); border-radius:10px; background:#fff; cursor:pointer }
+    .muted{ color:var(--muted); font-size:12px }
+    main .container{ padding-top:12px }
+    .row{ display:flex; gap:12px; flex-wrap:wrap; align-items:center; margin-bottom:10px }
+    select, input[type="text"]{ padding:8px 10px; border:1px solid var(--border); border-radius:10px }
+    .list{ border:1px solid var(--border); border-radius:var(--radius); overflow:hidden }
+    .item{ display:flex; align-items:center; gap:12px; padding:10px 12px; background:#fff; border-bottom:1px solid var(--border) }
+    .item:last-child{ border-bottom:none }
+    .handle{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono","Courier New", monospace; cursor:grab; user-select:none; touch-action:none }
+    .dragging{ opacity:.5 }
+    .idx{ width:2.5em; text-align:right; color:#666 }
+    .grow{ flex:1; min-width:220px }
+    .del{ color:#b91c1c; border-color:#f3c0c0 }
+    .ghost{ height:44px; margin:0; border:1px dashed #bbb; background:#f9fafb }
+    footer{ border-top:1px solid var(--border); margin-top:20px }
+  </style>
 </head>
 <body>
   <header>
     <div class="container">
       <h1>拖曳排序 · TXT / JSON 編輯器</h1>
       <div class="toolbar">
-        
-        
-        <button id="add">新增一列</button>
-        <button id="save-remote">儲存到遠端</button>
-        <span id="meta" class="muted"></span>
+        <label class="button" for="file">讀取檔案 (.txt / .json)</label>
+        <input id="file" type="file" accept=".txt,.json,application/json,text/plain" />
+        <button id="add" type="button">新增一列</button>
+        <button id="alphasort" type="button">A→Z 排序</button>
+        <button id="download-json" type="button">下載 JSON</button>
+        <button id="download-txt" type="button">下載 TXT</button>
+        <button id="save-remote" type="button">儲存到遠端</button>
+        <!-- 可選：若要手動重新載入 public/data.json，保留此鍵 -->
+        <button id="reload-remote" type="button" title="重新讀取 public/data.json">重新讀取遠端</button>
+        <span id="meta" class="muted" aria-live="polite"></span>
       </div>
     </div>
   </header>
@@ -24,34 +55,35 @@
   <main>
     <div class="container">
       <div class="row">
-        <label class="muted">資料模式：</label>
-        <select id="mode">
+        <label class="muted" for="mode">資料模式：</label>
+        <select id="mode" aria-label="資料模式">
           <option value="txt">TXT（每行一筆）</option>
           <option value="json">JSON（陣列）</option>
         </select>
 
-        <label class="muted">顯示欄位（JSON）：</label>
-        <select id="json-key" disabled></select>
+        <label class="muted" for="json-key">顯示欄位（JSON）：</label>
+        <select id="json-key" aria-label="顯示欄位" disabled></select>
 
-        <label class="muted">搜尋：</label>
-        <input id="q" type="text" placeholder="輸入關鍵字過濾…" />
+        <label class="muted" for="q">搜尋：</label>
+        <input id="q" type="text" placeholder="輸入關鍵字過濾…" aria-label="搜尋關鍵字" />
       </div>
 
       <div id="list" class="list" aria-live="polite"></div>
 
-      <div class="help muted">
+      <div class="help muted" style="margin-top:12px">
         <p>使用方式：</p>
         <ul>
-          <li>讀取 <code>.txt</code>（一行一筆）或 <code>.json</code>（<code>[ ... ]</code> 陣列）。</li>
-          <li>用左側 <code>≡</code> 拖曳上下移動排序；點 <code>刪除</code> 可移除一筆。</li>
-          <li>完成後可下載檔案，或直接點「儲存到遠端」送回 GitHub。</li>
+          <li>可讀取 <code>.txt</code>（一行一筆）或 <code>.json</code>（<code>[...]</code> 陣列）。</li>
+          <li>用左側 <code>≡</code> 拖曳上下移動；點 <code>刪除</code> 可移除一筆；手機也可用 ▲▼ 移動。</li>
+          <li>完成後可下載檔案，或按「儲存到遠端」送回 GitHub（<code>public/data.json</code>）。</li>
+          <li>首次開啟會自動讀取本專案的 <code>public/data.json</code>。</li>
         </ul>
       </div>
     </div>
   </main>
 
   <footer>
-    <div class="container muted">© 2025 Hades · 純前端，資料只會寫回 GitHub</div>
+    <div class="container muted">© 2025 Hades · 前端純靜態 + Cloudflare Worker 寫回 GitHub</div>
   </footer>
 
   <script type="module" src="./app.js"></script>
