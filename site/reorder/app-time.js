@@ -1,7 +1,7 @@
 /* ===== 設定 ===== */
 const API_URL     = "https://hadeseidolon-json-saver.b5cp686csv.workers.dev/api/save"; // ← 換成你的 Worker URL
 const TARGET_PATH = "public/data.json";
-const DATA_URL    = "../../public/data.json";
+const DATA_URL    = "/HadesEidolon/public/data.json"; // 寫死 GitHub Pages 路徑
 
 /* ===== 狀態：rows = [ [name, hhmm|null], ... ] ===== */
 let rows = [];
@@ -20,7 +20,7 @@ init(false);
 async function init(manual){
   try{
     const r = await fetch(DATA_URL + "?t=" + Date.now(), { cache: "no-store" });
-    if(!r.ok) throw new Error("HTTP " + r.status);
+    if(!r.ok) throw new Error(`HTTP ${r.status}（讀取 ${DATA_URL} 失敗）`);
     const arr = JSON.parse(await r.text());
     rows = normalize(arr);
     render();
@@ -29,11 +29,12 @@ async function init(manual){
     rows = [];
     render();
     if(manual) alert("讀取失敗：" + e.message);
-    $meta.textContent = `尚未載入 · ${new Date().toLocaleTimeString()}`;
+    $meta.textContent = `讀取失敗：${e.message}`;
+    console.error("載入錯誤：", e);
   }
 }
 
-/* 任何舊格式 → 轉成 [name, hhmm|null] */
+/* 舊格式 → 轉成 [name, hhmm|null] */
 function normalize(arr){
   if(!Array.isArray(arr)) return [];
   return arr.map(item=>{
@@ -56,6 +57,9 @@ function normalize(arr){
 /* ------------------ Render ------------------ */
 function render(){
   $tbody.innerHTML = '';
+
+  const inputs = []; // 收集所有時間輸入框
+
   rows.forEach((row, i)=>{
     const tr = document.createElement('tr');
 
@@ -82,30 +86,49 @@ function render(){
     time.placeholder = 'HHmm';
     time.className='w-time';
     time.value = row[1] || '';
-    time.oninput = () => {
-      const v = time.value.replace(/\D/g,''); // 僅保留數字
+
+    // 更新時間資料 & 自動跳下一格
+    time.addEventListener('input', () => {
+      const v = time.value.replace(/\D/g,'');
       time.value = v;
-      if (v.length === 4 && validHHmm(v)) rows[i][1] = v;
-      else if (v === '')                 rows[i][1] = null;
-    };
+
+      if (v.length === 4 && validHHmm(v)) {
+        rows[i][1] = v;
+        // 自動跳到下一個時間欄位
+        const nextInput = inputs[i + 1];
+        if (nextInput) {
+          nextInput.focus();
+          nextInput.select();
+        }
+      } else if (v === '') {
+        rows[i][1] = null;
+      }
+    });
+
+    // 允許使用 Enter 跳下一格
+    time.addEventListener('keydown', (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        const nextInput = inputs[i + 1];
+        if (nextInput) {
+          nextInput.focus();
+          nextInput.select();
+        }
+      }
+    });
+
     tdTime.appendChild(time);
 
-    // actions（單筆操作保留）
-    const tdAct = document.createElement('td'); tdAct.className='actions';
-    const btnNow = document.createElement('button'); btnNow.textContent='現在'; btnNow.onclick=()=>{ rows[i][1] = hhmmNow(); render(); };
-    const btnClear = document.createElement('button'); btnClear.textContent='清空'; btnClear.onclick=()=>{ rows[i][1] = null; render(); };
-    tdAct.append(btnNow, btnClear);
+    // 無 actions（刪掉「現在」與「清空」）
+    const tdEmpty = document.createElement('td');
+    tr.append(tdIdx, tdName, tdTime, tdEmpty);
 
-    tr.append(tdIdx, tdName, tdTime, tdAct);
     $tbody.appendChild(tr);
+    inputs.push(time);
   });
 }
 
 /* ------------------ 工具 ------------------ */
-function hhmmNow(){
-  const d = new Date();
-  return String(d.getHours()).padStart(2,'0') + String(d.getMinutes()).padStart(2,'0');
-}
 function validHHmm(v){
   if(typeof v !== 'string') return false;
   if(!/^\d{4}$/.test(v)) return false;
@@ -118,7 +141,7 @@ async function saveRemote(){
   const payload = {
     path: TARGET_PATH,
     content: JSON.stringify(rows, null, 2),
-    message: "chore: update data.json (times HHmm, minimal UI)"
+    message: "chore: update data.json (time editor, auto-jump enabled)"
   };
   try{
     const res = await fetch(API_URL, {
@@ -135,3 +158,4 @@ async function saveRemote(){
     alert("❌ 儲存失敗：" + e.message);
   }
 }
+
