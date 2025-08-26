@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>名字編輯器 · data.json</title>
+  <style>
+    :root{ --border:#e5e7eb; --muted:#6b7280 }
+    *{ box-sizing:border-box } body{ font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "PingFang TC", "Microsoft JhengHei", sans-serif; margin:0; color:#111 }
+    header{ position:sticky; top:0; z-index:10; background:#ffffffcc; backdrop-filter:saturate(140%) blur(6px); border-bottom:1px solid var(--border) }
+    .container{ max-width:960px; margin:0 auto; padding:14px 16px }
+    h1{ margin:0 0 10px; font-size:20px }
+    .toolbar{ display:flex; gap:8px; flex-wrap:wrap; align-items:center }
+    button, input{ padding:8px 10px; border:1px solid var(--border); border-radius:10px; background:#fff }
+    .muted{ color:var(--muted); font-size:12px }
+    .list{ border:1px solid var(--border); border-radius:12px; overflow:hidden }
+    .row{ display:flex; align-items:center; gap:10px; padding:10px 12px; border-bottom:1px solid var(--border) }
+    .row:last-child{ border-bottom:none }
+    .idx{ width:3em; text-align:right; color:#666 }
+    .name{ flex:1; min-width:220px }
+    .ghost{ height:44px; border:1px dashed #bbb; background:#f9fafb }
+    .del{ color:#b91c1c; border-color:#f3c0c0 }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="container">
+      <h1>名字編輯器 · <code>public/data.json</code></h1>
+      <div class="toolbar">
+        <button id="add">新增一列</button>
+        <button id="alphasort">A→Z 排序（名字）</button>
+        <button id="reload">重新讀取</button>
+        <button id="save">儲存到遠端</button>
+        <a href="./time.html" style="margin-left:auto">切換到「時間編輯器」→</a>
+        <span id="meta" class="muted" aria-live="polite"></span>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    <div id="list" class="list" aria-live="polite"></div>
+    <p class="muted" style="margin-top:8px">本頁只顯示並編輯<b>名字</b>；不顯示時間。若要編輯時間，請到 <code>time.html</code>。</p>
+  </main>
+
+  <script type="module" src="./app-names.js"></script>
+</body>
+</html>
