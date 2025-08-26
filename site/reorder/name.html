@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>名字編輯器 · data.json</title>
+  <title>天堂 - BOSS時間 - 編輯排序</title>
   <style>
     :root{ --border:#e5e7eb; --muted:#6b7280 }
     *{ box-sizing:border-box } body{ font-family: system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,"PingFang TC","Microsoft JhengHei",sans-serif; margin:0; color:#111 }
@@ -26,21 +26,19 @@
 <body>
   <header>
     <div class="container">
-      <h1>名字編輯器 · <code>public/data.json</code></h1>
+      <h1>編輯排序<code>public/data.json</code></h1>
       <div class="toolbar">
         <button id="reload">重新讀取</button>
-        <button id="save">儲存到遠端</button>
-        <a href="./time.html" style="margin-left:auto">切換到「時間編輯器」→</a>
+        <button id="save">儲存到伺服器</button>  
+        <a class="btn" href="./time.html" style="margin-left:auto">回首頁</a>
         <span id="meta" class="muted" aria-live="polite"></span>
       </div>
     </div>
   </header>
 
   <main class="container">
-    <div id="list" class="list" aria-live="polite"></div>
-    <p class="muted" style="margin-top:8px">
-      本頁專注於<b>名字管理</b>，不顯示時間；如需修改時間請到 <code>time.html</code>。
-    </p>
+    <p class="muted" style="margin-top:8px">BOSS名稱新增、刪除、拉動名稱可以移動排序</p>
+    <div id="list" class="list" aria-live="polite"></div>    
   </main>
 
   <script type="module" src="./app-names.js"></script>
