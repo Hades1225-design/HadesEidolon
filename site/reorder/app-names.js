@@ -2,6 +2,7 @@
 const API_URL     = "https://hadeseidolon-json-saver.b5cp686csv.workers.dev/api/save"; // ← 換成你的 Worker URL
 const TARGET_PATH = "public/data.json";
 const DATA_URL    = "/HadesEidolon/public/data.json"; // 固定 GitHub Pages 路徑
+const GITHUB_API  = "https://api.github.com/repos/Hades1225-design/HadesEidolon/commits?path=public/data.json&page=1&per_page=1";
 
 /* ===== 狀態：rows = [ [name, hhmm|null], ... ] ===== */
 let rows = [];
@@ -30,13 +31,32 @@ async function init(manual){
     }
     rows = normalize(arr);
     render();
-    $meta.textContent = `已載入（${new Date().toLocaleString()}） · ${DATA_URL}`;
+    await updateMetaTime();
   }catch(e){
     rows = [];
     render();
     if(manual) alert("讀取失敗：" + e.message);
     $meta.textContent = `讀取失敗：${e.message}`;
     console.error("載入錯誤：", e);
+  }
+}
+
+/* 從 GitHub 取得 data.json 的最後修改時間 */
+async function updateMetaTime(){
+  try {
+    const res = await fetch(GITHUB_API, { cache: "no-store" });
+    if(!res.ok) throw new Error(`HTTP ${res.status}（讀取 GitHub commit 失敗）`);
+    const commits = await res.json();
+    if (Array.isArray(commits) && commits.length > 0) {
+      const date = commits[0].commit.committer.date;
+      const local = new Date(date).toLocaleString();
+      $meta.textContent = `最後更新：${local}`;
+    } else {
+      $meta.textContent = `最後更新時間未知`;
+    }
+  } catch(e) {
+    console.error("讀取最後更新時間失敗：", e);
+    $meta.textContent = `最後更新時間讀取失敗`;
   }
 }
 
@@ -116,7 +136,7 @@ function render(){
     del.textContent='刪除';
     del.onclick = () => { rows.splice(i,1); render(); };
 
-    // 因為隱藏時間，順序改為：編號 → 名字 → 新增 → 刪除
+    // 顯示順序：編號 → 名字 → 新增 → 刪除
     div.append(idx, name, addBtn, del);
     $list.appendChild(div);
   });
@@ -142,7 +162,7 @@ async function saveRemote(){
   const payload = {
     path: TARGET_PATH,
     content: JSON.stringify(rows, null, 2),
-    message: "chore: update data.json (names editor hide time)"
+    message: "chore: update data.json (names editor show last modified)"
   };
   try{
     const res = await fetch(API_URL, {
@@ -152,8 +172,8 @@ async function saveRemote(){
     });
     const out = await res.json().catch(()=> ({}));
     if(!res.ok) throw new Error(out.github_raw || out.error || out.detail || 'unknown');
-    alert("✅ 已儲存！" + (out.commit? " commit: "+out.commit:""));
-    $meta.textContent = `已儲存（${new Date().toLocaleString()}）`;
+    alert("✅ 已儲存成功！");
+    await updateMetaTime(); // 儲存後重新讀取最後更新時間
   }catch(e){
     alert("❌ 儲存失敗：" + e.message);
   }
