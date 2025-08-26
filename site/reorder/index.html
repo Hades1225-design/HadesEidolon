@@ -35,11 +35,44 @@
 
     /* 頁面顯示：單列垂直清單（置中） */
     .list{ display:flex; flex-direction:column; gap:8px; margin-top:12px }
+    
+    /* 卡片：固定大小、橫向排列名字與時間 */
     .card{
-      background:var(--card-bg); border:1px solid var(--border); border-radius:10px;
-      width:216px; height:96px; padding:10px; margin:0 auto;
-      display:flex; flex-direction:column; justify-content:center; align-items:center; text-align:center;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      width: 216px;
+      height: 96px;
+      padding: 10px 12px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: row;            /* 橫向排版 */
+      align-items: center;            /* 垂直置中 */
+      justify-content: space-between; /* 左右對齊 */
+      text-align: left;               /* 名字靠左 */
+      gap: 6px;
+      box-sizing: border-box;
     }
+    
+    /* 名字：靠左，允許換行 */
+    .card .name{
+      font-weight: 600;
+      font-size: 16px;
+      line-height: 1.2;
+      flex: 1;                        /* 名字占剩餘寬度 */
+      word-break: break-word;
+    }
+    
+    /* 時間：靠右，固定寬度，字型對齊 */
+    .card .time{
+      font-variant-numeric: tabular-nums;
+      font-size: 14px;
+      color: #374151;
+      white-space: nowrap;
+      margin-left: 8px;
+      flex-shrink: 0;
+    }
+    
     .name{ font-weight:600; line-height:1.2; margin-bottom:6px; word-break:break-word }
     .time{ font-variant-numeric:tabular-nums; color:#374151 }
     .status-green{ background: var(--green); }
@@ -206,41 +239,43 @@
   }
 
   function render(){
-    $list.innerHTML = '';
-    const nowHHmm = hhmmNow();
-    const nextIdx = findNextClosestIndex(items, nowHHmm);
+  $list.innerHTML = '';
+  const nowHHmm = hhmmNow();
+  const nextIdx = findNextClosestIndex(items, nowHHmm);
 
-    items.forEach(([name, t], idx)=>{
-      const card = document.createElement('div');
-      card.className = 'card';
+  items.forEach(([name, t], idx)=>{
+    const card = document.createElement('div');
+    card.className = 'card';
 
-      const title = document.createElement('div');
-      title.className = 'name';
-      title.textContent = name || '—';
+    // 名字
+    const title = document.createElement('div');
+    title.className = 'name';
+    title.textContent = name || '—';
 
-      const sub = document.createElement('div');
-      sub.className = 'time';
+    // 時間
+    const sub = document.createElement('div');
+    sub.className = 'time';
 
-      if(t === null){
-        sub.textContent = '已重生';
-        card.classList.add('status-green');
-      }else{
-        sub.textContent = toDisplay(t);
+    if(t === null){
+      sub.textContent = '已重生';
+      card.classList.add('status-green');
+    }else{
+      sub.textContent = toDisplay(t);
+      const raw = HHmmToMinutes(t) - nowMinutes();
+      const isEarlyMorning = t <= WRAP_CUTOFF;
 
-        const raw = HHmmToMinutes(t) - nowMinutes();
-        const isEarlyMorning = t <= WRAP_CUTOFF;
-
-        if(raw < 0 && !isEarlyMorning){
-          card.classList.add('status-red');    // 今天已過去
-        }else if(idx === nextIdx){
-          card.classList.add('status-yellow'); // 未來中最近
-        }
+      if(raw < 0 && !isEarlyMorning){
+        card.classList.add('status-red');
+      }else if(idx === nextIdx){
+        card.classList.add('status-yellow');
       }
+    }
 
-      card.append(title, sub);
-      $list.appendChild(card);
-    });
-  }
+    // 新結構：名字靠左，時間靠右
+    card.append(title, sub);
+    $list.appendChild(card);
+  });
+}
 
   function hhmmNow(){
     const d = new Date();
