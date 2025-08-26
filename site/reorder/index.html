@@ -13,36 +13,88 @@
       --card-bg:#ffffff;
     }
     *{ box-sizing:border-box }
-    body{ margin:0; font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,"PingFang TC","Microsoft JhengHei",sans-serif; color:#111; background:#fafafa }
-    header{ position:sticky; top:0; z-index:10; background:#ffffffcc; backdrop-filter:saturate(140%) blur(6px); border-bottom:1px solid var(--border) }
-    .container{ max-width:1600px; margin:0 auto; padding:12px 16px }
+    body{
+      margin:0;
+      font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,"PingFang TC","Microsoft JhengHei",sans-serif;
+      color:#111;
+      background:#fafafa;
+    }
+    header{
+      position:sticky;
+      top:0;
+      z-index:10;
+      background:#ffffffcc;
+      backdrop-filter:saturate(140%) blur(6px);
+      border-bottom:1px solid var(--border);
+    }
+    .container{
+      max-width:1600px;
+      margin:0 auto;
+      padding:12px 16px;
+    }
     h1{ margin:0 0 8px; font-size:20px }
     .meta{ color:var(--muted); font-size:12px }
     .toolbar{ display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-top:6px }
-    button{ padding:8px 10px; border:1px solid var(--border); border-radius:10px; background:#fff }
+    button{
+      padding:8px 10px;
+      border:1px solid var(--border);
+      border-radius:10px;
+      background:#fff;
+    }
 
-    /* 30張卡片一列（固定 30 欄） */
-    .grid{
-      display:grid;
-      grid-template-columns: repeat(30, minmax(0, 1fr));
-      gap:8px;
+    /* 外層：每列 */
+    .rows{
+      display:flex;
+      gap:12px; /* 列之間的距離 */
       margin-top:12px;
     }
+
+    /* 單列：垂直 30 張卡片 */
+    .column{
+      display:flex;
+      flex-direction:column;
+      gap:8px;
+      min-width:180px;
+    }
+
+    /* 單張卡片 */
     .card{
       background:var(--card-bg);
       border:1px solid var(--border);
       border-radius:10px;
       padding:10px;
       min-height:70px;
-      display:flex; flex-direction:column; justify-content:center; align-items:center;
+      display:flex;
+      flex-direction:column;
+      justify-content:center;
+      align-items:center;
       text-align:center;
     }
-    .name{ font-weight:600; line-height:1.2; margin-bottom:6px; word-break:break-word }
-    .time{ font-variant-numeric:tabular-nums; color:#374151 }
+    .name{
+      font-weight:600;
+      line-height:1.2;
+      margin-bottom:6px;
+      word-break:break-word;
+    }
+    .time{
+      font-variant-numeric:tabular-nums;
+      color:#374151;
+    }
     .status-green{ background: var(--green); }
     .status-red{ background: var(--red); }
-    .legend{ display:flex; gap:10px; align-items:center; color:var(--muted); font-size:12px; }
-    .chip{ display:inline-block; padding:2px 8px; border-radius:999px; border:1px solid var(--border); }
+    .legend{
+      display:flex;
+      gap:10px;
+      align-items:center;
+      color:var(--muted);
+      font-size:12px;
+    }
+    .chip{
+      display:inline-block;
+      padding:2px 8px;
+      border-radius:999px;
+      border:1px solid var(--border);
+    }
     .chip.red{ background:var(--red) }
     .chip.green{ background:var(--green) }
   </style>
@@ -63,19 +115,18 @@
   </header>
 
   <main class="container">
-    <div id="grid" class="grid" aria-live="polite"></div>
+    <div id="rows" class="rows" aria-live="polite"></div>
   </main>
 
   <script>
-  // 設定
   const DATA_URL   = "/HadesEidolon/public/data.json";
   const GITHUB_API = "https://api.github.com/repos/Hades1225-design/HadesEidolon/commits?path=public/data.json&page=1&per_page=1";
 
-  const $grid = document.getElementById('grid');
+  const $rows = document.getElementById('rows');
   const $meta = document.getElementById('meta');
   document.getElementById('reload').onclick = () => init(true);
 
-  let rows = []; // [ [name, hhmm|null], ... ]
+  let items = []; // [ [name, hhmm|null], ... ]
 
   init(false);
 
@@ -84,12 +135,12 @@
       const r = await fetch(DATA_URL + "?t=" + Date.now(), { cache:"no-store" });
       if(!r.ok) throw new Error(`HTTP ${r.status}（讀取 ${DATA_URL} 失敗）`);
       const arr = JSON.parse(await r.text());
-      rows = normalize(arr);
-      sortOldToNew(rows);
+      items = normalize(arr);
+      sortOldToNew(items);
       render();
       await updateMetaTime();
     }catch(e){
-      rows = [];
+      items = [];
       render();
       if(manual) alert("讀取失敗：" + e.message);
       $meta.textContent = `讀取失敗：${e.message}`;
@@ -117,58 +168,68 @@
     });
   }
 
-  // 排序：null 視為最舊（排最前），其餘按 HHmm 由小到大
+  // 排序：null 視為最舊，放最前；其餘按 HHmm 由小到大
   function sortOldToNew(a){
     a.sort((x,y)=>{
       const tx = x[1], ty = y[1];
       if(tx === null && ty === null) return 0;
       if(tx === null) return -1;
       if(ty === null) return 1;
-      return tx.localeCompare(ty); // "0003" < "0915" < "2231"
+      return tx.localeCompare(ty);
     });
   }
 
   function render(){
-    $grid.innerHTML = '';
-    const now = hhmmNow(); // "HHmm"
+    $rows.innerHTML = '';
+    const now = hhmmNow();
+    const columns = Math.ceil(items.length / 30);
 
-    rows.forEach(([name, t])=>{
-      const card = document.createElement('div');
-      card.className = 'card';
+    for(let col = 0; col < columns; col++){
+      const column = document.createElement('div');
+      column.className = 'column';
 
-      const title = document.createElement('div');
-      title.className = 'name';
-      title.textContent = name || '—';
+      const start = col * 30;
+      const end = start + 30;
+      const slice = items.slice(start, end);
 
-      const sub = document.createElement('div');
-      sub.className = 'time';
-      if(t === null){
-        sub.textContent = '已重生';
-        card.classList.add('status-green');
-      }else{
-        sub.textContent = toDisplay(t); // HH:mm
-        if(t < now){ // 舊於目前時間 → 淡紅
-          card.classList.add('status-red');
+      slice.forEach(([name, t])=>{
+        const card = document.createElement('div');
+        card.className = 'card';
+
+        const title = document.createElement('div');
+        title.className = 'name';
+        title.textContent = name || '—';
+
+        const sub = document.createElement('div');
+        sub.className = 'time';
+
+        if(t === null){
+          sub.textContent = '已重生';
+          card.classList.add('status-green');
+        }else{
+          sub.textContent = toDisplay(t);
+          if(t < now){
+            card.classList.add('status-red');
+          }
         }
-      }
 
-      card.append(title, sub);
-      $grid.appendChild(card);
-    });
+        card.append(title, sub);
+        column.appendChild(card);
+      });
+
+      $rows.appendChild(column);
+    }
   }
 
   function hhmmNow(){
     const d = new Date();
-    const h = String(d.getHours()).padStart(2,'0');
-    const m = String(d.getMinutes()).padStart(2,'0');
-    return h + m;
+    return String(d.getHours()).padStart(2,'0') + String(d.getMinutes()).padStart(2,'0');
   }
 
   function toDisplay(hhmm){
     return hhmm.slice(0,2) + ':' + hhmm.slice(2,4);
   }
 
-  // 顯示 GitHub 上 data.json 的最後修改時間
   async function updateMetaTime(){
     try{
       const r = await fetch(GITHUB_API, { cache:"no-store" });
