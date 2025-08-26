@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>時間編輯器 · data.json（HHmm）</title>
+  <title>BOSS時間編輯器</title>
   <style>
     :root{ --border:#e5e7eb; --muted:#6b7280 }
     *{ box-sizing:border-box } 
@@ -26,21 +26,21 @@
       <h1>時間編輯器（24H HHmm） · <code>public/data.json</code></h1>
       <div class="toolbar">
         <button id="reload">重新讀取</button>
-        <button id="save">儲存到遠端</button>
-        <a href="./name.html" style="margin-left:auto">← 回名字編輯器</a>
+        <button id="save">儲存到伺服器</button>
+        <a href="./index.html" style="margin-left:auto">← 回首頁</a>
         <span id="meta" class="muted" aria-live="polite"></span>
       </div>
     </div>
   </header>
 
   <main class="container">
+    <p class="muted">輸入 4 位數字後或者按ENTER會自動跳下一欄繼續輸入（例如 <code>2231</code>）。</p>
     <table>
       <thead>
-        <tr><th style="width:3em">#</th><th>名字（唯讀）</th><th>時間（HHmm）</th><th>操作</th></tr>
+        <tr><th style="width:3em">#</th><th>BOSS名稱</th><th>時間（HHmm）</th></tr>
       </thead>
       <tbody id="tbody"></tbody>
     </table>
-    <p class="muted">本頁只修改 <b>時間</b>；名字僅顯示不可編輯。輸入 4 位數（例如 <code>2231</code>），或用「現在／清空」。</p>
   </main>
 
   <script type="module" src="./app-time.js"></script>
