@@ -1,5 +1,5 @@
 /* ===== 設定（請改 API_URL） ===== */
-const API_URL     = "https://<你的-worker>.workers.dev/api/save"; // ← 換成你的 Worker URL
+const API_URL     = "https://hadeseidolon-json-saver.b5cp686csv.workers.dev/api/save"; // ← 換成你的 Worker URL
 const TARGET_PATH = "public/data.json";
 
 /* 直接寫死 GitHub Pages 下的路徑，避免相對路徑踩雷 */
