@@ -1,37 +1,72 @@
-// === 設定（請改這一行） ===
-const API_URL = "https://hadeseidolon-json-saver.b5cp686csv.workers.dev/api/save"; // 例：https://hades-json-saver.xxxxx.workers.dev/api/save
-const TARGET_PATH = "public/data.json"; // 寫回 GitHub 的檔案路徑
+/* ================== 設定（請改這一行） ================== */
+const API_URL   = "https://hadeseidolon-json-saver.b5cp686csv.workers.dev/api/save"; // 例：https://hades-json-saver.xxxxx.workers.dev/api/save
+const TARGET_PATH = "public/data.json";                               // 寫回 GitHub 的檔案路徑
+const RAW_URL     = "https://raw.githubusercontent.com/Hades1225-design/HadesEidolon/main/public/data.json"; // 首次載入遠端資料來源
 
-// === 狀態 ===
+/* ================== 狀態 ================== */
 let MODE = 'txt';              // 'txt' | 'json'
 let ITEMS = [];                // TXT 模式的純字串陣列
 let RAW_JSON = [];             // JSON 模式的原始物件陣列
-let JSON_KEY = '';             // JSON 模式的顯示欄位 key
-let FILTER = '';               // 關鍵字過濾
+let JSON_KEY = '';             // JSON 模式顯示欄位 key
+let FILTER = '';               // 搜尋過濾字串
 
-// === DOM ===
-const $file = document.getElementById('file');
-const $list = document.getElementById('list');
-const $mode = document.getElementById('mode');
-const $jsonKey = document.getElementById('json-key');
-const $q = document.getElementById('q');
-const $meta = document.getElementById('meta');
+/* ================== DOM ================== */
+const $file   = document.getElementById('file');
+const $list   = document.getElementById('list');
+const $mode   = document.getElementById('mode');
+const $jsonKey= document.getElementById('json-key');
+const $q      = document.getElementById('q');
+const $meta   = document.getElementById('meta');
 
-// === 事件 ===
-document.getElementById('add').onclick = () => addItem();
-document.getElementById('alphasort').onclick = () => { alphaSort(); render(); };
-document.getElementById('download-json').onclick = () => downloadJSON();
-document.getElementById('download-txt').onclick = () => downloadTXT();
-document.getElementById('save-remote').onclick = () => saveRemote();
+/* ================== 事件 ================== */
+document.getElementById('add').onclick            = () => addItem();
+document.getElementById('alphasort').onclick      = () => { alphaSort(); render(); };
+document.getElementById('download-json').onclick  = () => downloadJSON();
+document.getElementById('download-txt').onclick   = () => downloadTXT();
+document.getElementById('save-remote').onclick    = () => saveRemote();
 
-$file.onchange = (e) => handleFile(e.target.files?.[0]);
-$mode.onchange = () => switchMode($mode.value);
+if (document.getElementById('reload-remote')) {
+  document.getElementById('reload-remote').onclick = () => initLoad(true);
+}
+
+$file.onchange  = (e) => handleFile(e.target.files?.[0]);
+$mode.onchange  = () => switchMode($mode.value);
 $jsonKey.onchange = () => { JSON_KEY = $jsonKey.value; rebuildFromRaw(); render(); };
-$q.oninput = () => { FILTER = $q.value.trim().toLowerCase(); render(); };
+$q.oninput      = () => { FILTER = $q.value.trim().toLowerCase(); render(); };
 
-// === 起始 ===
+/* ================== 啟動 ================== */
 switchMode(MODE);
 render();
+initLoad(false); // 首次載入遠端 data.json（失敗則顯示空白）
+
+/* ================== 初始化載入 GitHub 上的資料 ================== */
+async function initLoad(manual=false) {
+  try {
+    const res = await fetch(RAW_URL + "?t=" + Date.now(), { cache: "no-store" });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const text = await res.text();
+    const arr = JSON.parse(text);
+    if (!Array.isArray(arr)) throw new Error("檔案格式錯誤：不是陣列");
+
+    MODE = 'json';
+    $mode.value = 'json';
+    RAW_JSON = arr;
+
+    const guess = guessJsonKey(arr);
+    JSON_KEY = guess || 'text';
+    updateJsonKeyOptions(Object.keys(arr[0] || { text: '' }));
+
+    rebuildFromRaw();
+    $meta.textContent = `已載入遠端資料 · ${new Date().toLocaleTimeString()}`;
+    render();
+  } catch (e) {
+    if (manual) alert('讀取遠端失敗：' + e.message);
+    // 失敗就維持空白
+    RAW_JSON = [];
+    if (MODE === 'json') rebuildFromRaw();
+    render();
+  }
+}
 
 /* ================== 模式切換與資料 ================== */
 function switchMode(m){
@@ -158,7 +193,6 @@ function downloadBlob(content, filename, type){
 
 /* ================== 儲存到遠端（GitHub via Worker） ================== */
 async function saveRemote(){
-  // 統一以標準 JSON 陣列儲存：[{text: "..."}]
   const data = (MODE === 'json') ? RAW_JSON : ITEMS.map(v => ({ text: v }));
   const payload = {
     path: TARGET_PATH,
@@ -166,7 +200,6 @@ async function saveRemote(){
     message: "chore: update data.json via reorder web ui"
   };
 
-  // 基本檢查
   if (!/^https?:\/\//.test(API_URL)) {
     alert('❌ 儲存失敗：API_URL 無效（需要含 https://）');
     return;
@@ -179,15 +212,19 @@ async function saveRemote(){
       body: JSON.stringify(payload)
     });
 
-    // 嘗試解析 Worker 回傳（內含 github_raw 以利除錯）
     const outText = await res.text();
-    let out;
-    try { out = JSON.parse(outText); } catch { out = { raw: outText }; }
+    let out; try { out = JSON.parse(outText); } catch { out = { raw: outText }; }
 
     if(!res.ok){
       const detail = out.github_raw ? stringifyMaybeJSON(out.github_raw) : (out.error || out.detail || out.raw || 'unknown');
       alert(`❌ 儲存失敗\nstatus: ${res.status}\n${detail}`);
       return;
+    }
+
+    // 更新頁面小資訊
+    if (out.commit) {
+      const now = new Date();
+      $meta.textContent = `已儲存：${now.toLocaleString()} · commit ${String(out.commit).slice(0,7)}`;
     }
     alert(`✅ 已儲存成功！${out.commit ? 'commit: '+out.commit : ''}`);
   }catch(e){
@@ -241,11 +278,10 @@ function render(focusLast=false){
       render();
     });
 
-    // 句柄
+    // 句柄（觸控拖曳）
     const handle = document.createElement('span');
     handle.className = 'handle';
     handle.textContent = '≡';
-    // 觸控拖曳（手機）
     handle.style.touchAction = 'none';
     handle.onpointerdown = (e) => {
       e.preventDefault();
