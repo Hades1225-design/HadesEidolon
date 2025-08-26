@@ -14,11 +14,11 @@
     button, input{ padding:8px 10px; border:1px solid var(--border); border-radius:10px; background:#fff }
     .muted{ color:var(--muted); font-size:12px }
     .list{ border:1px solid var(--border); border-radius:12px; overflow:hidden }
-    .row{ display:grid; grid-template-columns: 3em 1fr auto 7ch auto; gap:10px; align-items:center; padding:10px 12px; border-bottom:1px solid var(--border) }
+    /* 隱藏時間欄後，改為四欄：編號、名字、新增、刪除 */
+    .row{ display:grid; grid-template-columns: 3em 1fr auto auto; gap:10px; align-items:center; padding:10px 12px; border-bottom:1px solid var(--border) }
     .row:last-child{ border-bottom:none }
     .idx{ text-align:right; color:#666 }
     .name{ width:100%; min-width:220px }
-    .time{ width:100%; text-align:center; color:#6b7280; background:#f8fafc }
     .ghost{ height:48px; border:1px dashed #bbb; background:#f9fafb; grid-column:1/-1 }
     .del{ color:#b91c1c; border-color:#f3c0c0 }
   </style>
@@ -39,7 +39,7 @@
   <main class="container">
     <div id="list" class="list" aria-live="polite"></div>
     <p class="muted" style="margin-top:8px">
-      本頁可編輯<b>名字</b>；時間以 <b>HHmm</b> 顯示且不可編輯。若要改時間，請至 <code>time.html</code>。
+      本頁專注於<b>名字管理</b>，不顯示時間；如需修改時間請到 <code>time.html</code>。
     </p>
   </main>
 
