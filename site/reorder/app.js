@@ -1,5 +1,5 @@
 // === 設定（請改這一行） ===
-const API_URL = "https://<你的-worker-子網域>.workers.dev/api/save"; // 例：https://hades-json-saver.xxxxx.workers.dev/api/save
+const API_URL = "https://hadeseidolon-json-saver.b5cp686csv.workers.dev/api/save"; // 例：https://hades-json-saver.xxxxx.workers.dev/api/save
 const TARGET_PATH = "public/data.json"; // 寫回 GitHub 的檔案路徑
 
 // === 狀態 ===
