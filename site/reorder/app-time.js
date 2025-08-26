@@ -1,9 +1,8 @@
-/* ===== 設定 ===== */
-
 /* === GitHub 讀檔設定（方案2：Contents API 直讀） === */
 const GH_OWNER  = "Hades1225-design";
 const GH_REPO   = "HadesEidolon";
 const GH_BRANCH = "main";
+
 async function fetchDataJSON(){
   const url = `https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/contents/public/data.json?ref=${GH_BRANCH}&ts=${Date.now()}`;
   const res = await fetch(url, {
@@ -15,6 +14,7 @@ async function fetchDataJSON(){
   try { return JSON.parse(text); }
   catch(e){ console.error("data.json 內容：", text); throw new Error("JSON 解析失敗"); }
 }
+/* ===== 設定 ===== */
 const API_URL     = "https://hadeseidolon-json-saver.b5cp686csv.workers.dev/api/save"; // ← 換成你的 Worker URL
 const TARGET_PATH = "public/data.json";
 const DATA_URL    = "/HadesEidolon/public/data.json"; // 固定 GitHub Pages 路徑
@@ -36,9 +36,7 @@ init(false);
 /* ------------------ 載入 ------------------ */
 async function init(manual){
   try{
-    const r = await fetch(DATA_URL + "?t=" + Date.now(), { cache: "no-store" });
-    if(!r.ok) throw new Error(`HTTP ${r.status}（讀取 ${DATA_URL} 失敗）`);
-    const arr = JSON.parse(await r.text());
+    const arr = await fetchDataJSON(); // ← 改這行
     rows = normalize(arr);
     render();
     await updateMetaTime();
@@ -47,7 +45,7 @@ async function init(manual){
     render();
     if(manual) alert("讀取失敗：" + e.message);
     $meta.textContent = `讀取失敗：${e.message}`;
-    console.error("載入錯誤：", e);
+    console.error(e);
   }
 }
 
