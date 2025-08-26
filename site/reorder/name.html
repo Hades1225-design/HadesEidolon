@@ -18,6 +18,7 @@
     .row:last-child{ border-bottom:none }
     .idx{ width:3em; text-align:right; color:#666 }
     .name{ flex:1; min-width:220px }
+    .time{ width:7ch; text-align:center; color:#6b7280; background:#f8fafc }
     .ghost{ height:44px; border:1px dashed #bbb; background:#f9fafb }
     .del{ color:#b91c1c; border-color:#f3c0c0 }
   </style>
@@ -39,7 +40,9 @@
 
   <main class="container">
     <div id="list" class="list" aria-live="polite"></div>
-    <p class="muted" style="margin-top:8px">本頁只顯示並編輯<b>名字</b>；不顯示時間。若要編輯時間，請到 <code>time.html</code>。</p>
+    <p class="muted" style="margin-top:8px">
+      本頁只編輯 <b>名字</b>；右側時間以 <b>HHmm</b> 顯示且不可編輯。若要改時間，請至 <code>time.html</code>。
+    </p>
   </main>
 
   <script type="module" src="./app-names.js"></script>
