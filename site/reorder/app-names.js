@@ -1,9 +1,7 @@
-/* ===== 設定（請改 API_URL） ===== */
+/* ===== 設定 ===== */
 const API_URL     = "https://hadeseidolon-json-saver.b5cp686csv.workers.dev/api/save"; // ← 換成你的 Worker URL
 const TARGET_PATH = "public/data.json";
-
-/* 直接寫死 GitHub Pages 下的路徑，避免相對路徑踩雷 */
-const DATA_URL    = "/HadesEidolon/public/data.json";
+const DATA_URL    = "/HadesEidolon/public/data.json"; // 固定 GitHub Pages 路徑
 
 /* ===== 狀態：rows = [ [name, hhmm|null], ... ] ===== */
 let rows = [];
@@ -12,10 +10,8 @@ let rows = [];
 const $list = document.getElementById('list');
 const $meta = document.getElementById('meta');
 
-document.getElementById('add').onclick       = () => { rows.push(["", null]); render(true); };
-document.getElementById('alphasort').onclick = () => { rows.sort((a,b)=>String(a[0]).localeCompare(String(b[0]))); render(); };
-document.getElementById('reload').onclick    = () => init(true);
-document.getElementById('save').onclick      = saveRemote;
+document.getElementById('reload').onclick = () => init(true);
+document.getElementById('save').onclick   = saveRemote;
 
 /* ===== 啟動 ===== */
 init(false);
@@ -27,9 +23,8 @@ async function init(manual){
     if(!res.ok) throw new Error(`HTTP ${res.status}（讀取 ${DATA_URL} 失敗）`);
     const text = await res.text();
     let arr;
-    try {
-      arr = JSON.parse(text);
-    } catch (e) {
+    try { arr = JSON.parse(text); }
+    catch (e) {
       console.error("JSON 解析失敗：原始內容：", text);
       throw new Error("JSON 解析失敗：請檢查 public/data.json 是否為有效 JSON 陣列");
     }
@@ -66,8 +61,9 @@ function normalize(arr){
 }
 
 /* ------------------ 介面 ------------------ */
-function render(focusLast=false){
+function render(){
   $list.innerHTML = '';
+
   rows.forEach((row, i)=>{
     const div = document.createElement('div');
     div.className = 'row';
@@ -90,34 +86,53 @@ function render(focusLast=false){
       const [m] = rows.splice(from,1); rows.splice(to,0,m); render();
     });
 
-    const idx  = document.createElement('span'); idx.className='idx';  idx.textContent = i+1;
+    // 編號
+    const idx  = document.createElement('span');
+    idx.className='idx';
+    idx.textContent = i+1;
 
+    // 名字（可編輯）
     const name = document.createElement('input');
     name.className='name';
     name.value = row[0];
-    name.oninput = () => { row[0] = name.value; }; // 只改名字
+    name.oninput = () => { row[0] = name.value; };
 
-    // 時間唯讀顯示（HHmm 或 ─）
+    // 新增（在此列下方插入空白項）
+    const addBtn = document.createElement('button');
+    addBtn.textContent = '新增';
+    addBtn.onclick = () => {
+      const newRow = ["", null];
+      rows.splice(i+1, 0, newRow);
+      render();
+      // 自動聚焦剛插入的那一列名字
+      const inputs = $list.querySelectorAll('.name');
+      const target = inputs[i+1];
+      target?.focus();
+    };
+
+    // 時間（唯讀 HHmm 或 ─）
     const time = document.createElement('input');
     time.className = 'time';
     time.readOnly = true;
     time.value = validHHmm(row[1]) ? row[1] : '—';
 
+    // 刪除
     const del  = document.createElement('button');
     del.className='del';
     del.textContent='刪除';
     del.onclick = () => { rows.splice(i,1); render(); };
 
-    div.append(idx, name, time, del);
+    div.append(idx, name, addBtn, time, del);
     $list.appendChild(div);
   });
-
-  if(focusLast && $list.lastElementChild){
-    $list.lastElementChild.querySelector('.name')?.focus();
-  }
 }
 
-function mkGhost(el){ const g=document.createElement('div'); g.className='ghost'; el.parentNode.insertBefore(g, el.nextSibling); return g; }
+function mkGhost(el){
+  const g=document.createElement('div');
+  g.className='ghost';
+  el.parentNode.insertBefore(g, el.nextSibling);
+  return g;
+}
 
 /* ------------------ 驗證 ------------------ */
 function validHHmm(v){
@@ -132,7 +147,7 @@ async function saveRemote(){
   const payload = {
     path: TARGET_PATH,
     content: JSON.stringify(rows, null, 2),
-    message: "chore: update data.json (names editor, fixed DATA_URL)"
+    message: "chore: update data.json (names editor with per-row add)"
   };
   try{
     const res = await fetch(API_URL, {
@@ -148,3 +163,4 @@ async function saveRemote(){
     alert("❌ 儲存失敗：" + e.message);
   }
 }
+
