@@ -4,11 +4,11 @@ const TARGET_PATH = "public/data.json";
 
 /* 自動推算專案根路徑（/HadesEidolon）以避免相對路徑踩雷 */
 const BASE_PATH = (() => {
-  // 例如 /HadesEidolon/site/reorder/name.html -> 取掉最後兩層 => /HadesEidolon
   const parts = window.location.pathname.split('/').filter(Boolean);
-  if (parts.length >= 2) return '/' + parts.slice(0, parts.length - 2).join('/');
-  return '/';
+  // name.html 在 /site/reorder 下 → 專案根目錄應該砍掉最後兩層
+  return '/' + parts.slice(0, 1).join('/');
 })();
+
 const DATA_URL = `${BASE_PATH}/${TARGET_PATH}`; // 結果：/HadesEidolon/public/data.json
 
 /* ===== 狀態：rows = [ [name, hhmm|null], ... ] ===== */
