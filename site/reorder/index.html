@@ -10,104 +10,66 @@
       --muted:#6b7280;
       --red:#fee2e2;
       --green:#dcfce7;
+      --yellow:#fef9c3;
       --card-bg:#ffffff;
     }
     *{ box-sizing:border-box }
     body{
       margin:0;
       font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,"PingFang TC","Microsoft JhengHei",sans-serif;
-      color:#111;
-      background:#fafafa;
+      color:#111; background:#fafafa;
     }
     header{
-      position:sticky;
-      top:0;
-      z-index:10;
-      background:#ffffffcc;
-      backdrop-filter:saturate(140%) blur(6px);
+      position:sticky; top:0; z-index:10;
+      background:#ffffffcc; backdrop-filter:saturate(140%) blur(6px);
       border-bottom:1px solid var(--border);
     }
-    .container{
-      max-width:1600px;
-      margin:0 auto;
-      padding:12px 16px;
-    }
+    .container{ max-width:900px; margin:0 auto; padding:12px 16px }
     h1{ margin:0 0 8px; font-size:20px }
     .meta{ color:var(--muted); font-size:12px }
     .toolbar{ display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-top:6px }
-    button{
-      padding:8px 10px;
-      border:1px solid var(--border);
-      border-radius:10px;
-      background:#fff;
+    button, .btn{
+      padding:8px 10px; border:1px solid var(--border);
+      border-radius:10px; background:#fff; color:#111; text-decoration:none; display:inline-block;
     }
 
-    /* 外層：每列 */
-    .rows{
-      display:flex;
-      gap:12px; /* 列之間的距離 */
-      margin-top:12px;
-    }
+    /* 單列垂直清單 */
+    .list{ display:flex; flex-direction:column; gap:8px; margin-top:12px }
 
-    /* 單列：垂直 30 張卡片 */
-    .column{
-      display:flex;
-      flex-direction:column;
-      gap:8px;
-      min-width:180px;
-    }
-
-    /* 單張卡片 */
+    /* 卡片：寬度 +20%（由 180px → 216px），置中 */
     .card{
-      background:var(--card-bg);
-      border:1px solid var(--border);
-      border-radius:10px;
-      padding:10px;
-      min-height:70px;
-      display:flex;
-      flex-direction:column;
-      justify-content:center;
-      align-items:center;
-      text-align:center;
+      background:var(--card-bg); border:1px solid var(--border); border-radius:10px;
+      padding:10px; min-height:70px;
+      max-width:216px; margin:0 auto; /* 置中 */
+      display:flex; flex-direction:column; justify-content:center; align-items:center; text-align:center;
     }
-    .name{
-      font-weight:600;
-      line-height:1.2;
-      margin-bottom:6px;
-      word-break:break-word;
-    }
-    .time{
-      font-variant-numeric:tabular-nums;
-      color:#374151;
-    }
+    .name{ font-weight:600; line-height:1.2; margin-bottom:6px; word-break:break-word }
+    .time{ font-variant-numeric:tabular-nums; color:#374151 }
+
     .status-green{ background: var(--green); }
     .status-red{ background: var(--red); }
-    .legend{
-      display:flex;
-      gap:10px;
-      align-items:center;
-      color:var(--muted);
-      font-size:12px;
-    }
-    .chip{
-      display:inline-block;
-      padding:2px 8px;
-      border-radius:999px;
-      border:1px solid var(--border);
-    }
+    .status-yellow{ background: var(--yellow); }
+
+    .legend{ display:flex; gap:10px; align-items:center; color:var(--muted); font-size:12px; }
+    .chip{ display:inline-block; padding:2px 8px; border-radius:999px; border:1px solid var(--border) }
     .chip.red{ background:var(--red) }
     .chip.green{ background:var(--green) }
+    .chip.yellow{ background:var(--yellow) }
   </style>
 </head>
 <body>
   <header>
     <div class="container">
-      <h1>天堂 - BOSS時間/h1>
+      <h1>天堂 - BOSS時間</h1>
       <div class="toolbar">
         <button id="reload">重新讀取</button>
-        <div class="legend">
+        <a class="btn" href="./name.html">編輯排序（name.html）</a>
+        <a class="btn" href="./time.html">編輯時間（time.html）</a>
+
+        <div class="legend" style="margin-left:8px">
           <span class="chip green">已重生</span>
           <span class="chip red">時間舊於目前時間</span>
+          <span class="chip yellow">即將重生</span>
         </div>
         <span id="meta" class="meta" aria-live="polite" style="margin-left:auto"></span>
       </div>
@@ -115,14 +77,14 @@
   </header>
 
   <main class="container">
-    <div id="rows" class="rows" aria-live="polite"></div>
+    <div id="list" class="list" aria-live="polite"></div>
   </main>
 
   <script>
   const DATA_URL   = "/HadesEidolon/public/data.json";
   const GITHUB_API = "https://api.github.com/repos/Hades1225-design/HadesEidolon/commits?path=public/data.json&page=1&per_page=1";
 
-  const $rows = document.getElementById('rows');
+  const $list = document.getElementById('list');
   const $meta = document.getElementById('meta');
   document.getElementById('reload').onclick = () => init(true);
 
@@ -168,7 +130,7 @@
     });
   }
 
-  // 排序：null 視為最舊，放最前；其餘按 HHmm 由小到大
+  // 排序：null 視為最舊（放最前），其餘按 HHmm 由小到大
   function sortOldToNew(a){
     a.sort((x,y)=>{
       const tx = x[1], ty = y[1];
@@ -180,56 +142,70 @@
   }
 
   function render(){
-    $rows.innerHTML = '';
+    $list.innerHTML = '';
     const now = hhmmNow();
-    const columns = Math.ceil(items.length / 30);
 
-    for(let col = 0; col < columns; col++){
-      const column = document.createElement('div');
-      column.className = 'column';
+    // 找出「比現在新」的最接近時間（只在未來中找最小差距）
+    const nextIdx = findNextClosestIndex(items, now);
 
-      const start = col * 30;
-      const end = start + 30;
-      const slice = items.slice(start, end);
+    items.forEach(([name, t], idx)=>{
+      const card = document.createElement('div');
+      card.className = 'card';
 
-      slice.forEach(([name, t])=>{
-        const card = document.createElement('div');
-        card.className = 'card';
+      const title = document.createElement('div');
+      title.className = 'name';
+      title.textContent = name || '—';
 
-        const title = document.createElement('div');
-        title.className = 'name';
-        title.textContent = name || '—';
+      const sub = document.createElement('div');
+      sub.className = 'time';
 
-        const sub = document.createElement('div');
-        sub.className = 'time';
-
-        if(t === null){
-          sub.textContent = '已重生';
-          card.classList.add('status-green');
-        }else{
-          sub.textContent = toDisplay(t);
-          if(t < now){
-            card.classList.add('status-red');
-          }
+      if(t === null){
+        sub.textContent = '已重生';
+        card.classList.add('status-green');
+      }else{
+        sub.textContent = toDisplay(t);
+        if (t < now){
+          card.classList.add('status-red');          // 已過去
+        } else if (idx === nextIdx){
+          card.classList.add('status-yellow');       // 未來中最接近現在
         }
+      }
 
-        card.append(title, sub);
-        column.appendChild(card);
-      });
-
-      $rows.appendChild(column);
-    }
+      card.append(title, sub);
+      $list.appendChild(card);
+    });
   }
 
   function hhmmNow(){
     const d = new Date();
     return String(d.getHours()).padStart(2,'0') + String(d.getMinutes()).padStart(2,'0');
   }
-
   function toDisplay(hhmm){
     return hhmm.slice(0,2) + ':' + hhmm.slice(2,4);
   }
+  function HHmmToMinutes(hhmm){
+    const h = +hhmm.slice(0,2), m = +hhmm.slice(2,4);
+    return h*60 + m;
+  }
 
+  // 回傳「未來且與現在差距最小」的索引；若沒有未來時間則回傳 -1
+  function findNextClosestIndex(arr, nowHHmm){
+    const nowMin = HHmmToMinutes(nowHHmm);
+    let bestIdx = -1, bestDelta = Infinity;
+    arr.forEach(([_, t], idx)=>{
+      if(typeof t === 'string' && /^\d{4}$/.test(t)){
+        const tm = HHmmToMinutes(t);
+        const delta = tm - nowMin;
+        if (delta >= 0 && delta < bestDelta){
+          bestDelta = delta;
+          bestIdx = idx;
+        }
+      }
+    });
+    return bestIdx;
+  }
+
+  // 顯示 GitHub 上 data.json 的最後修改時間
   async function updateMetaTime(){
     try{
       const r = await fetch(GITHUB_API, { cache:"no-store" });
