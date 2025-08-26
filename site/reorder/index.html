@@ -51,8 +51,8 @@
     /* 匯出版：多列 Grid，一列最多 30 張 */
     .export-grid{
       display:grid !important;
-      grid-template-columns: repeat(5, 216px); /* 每列 30 張 */
-      grid-auto-rows: min-content;
+      grid-template-columns: min-content; /* 每列 30 張 */
+      grid-auto-rows: repeat(30, 216px);
       gap:8px;
       justify-content:flex-start;
       align-content:start;
