@@ -1,7 +1,15 @@
-/* ===== 設定 ===== */
+/* ===== 設定：只需改 API_URL ===== */
 const API_URL     = "https://<你的-worker>.workers.dev/api/save"; // ← 換成你的 Worker URL
 const TARGET_PATH = "public/data.json";
-const DATA_URL    = "../../public/data.json";
+
+/* 自動推算專案根路徑（/HadesEidolon）以避免相對路徑踩雷 */
+const BASE_PATH = (() => {
+  // 例如 /HadesEidolon/site/reorder/name.html -> 取掉最後兩層 => /HadesEidolon
+  const parts = window.location.pathname.split('/').filter(Boolean);
+  if (parts.length >= 2) return '/' + parts.slice(0, parts.length - 2).join('/');
+  return '/';
+})();
+const DATA_URL = `${BASE_PATH}/${TARGET_PATH}`; // 結果：/HadesEidolon/public/data.json
 
 /* ===== 狀態：rows = [ [name, hhmm|null], ... ] ===== */
 let rows = [];
@@ -20,17 +28,25 @@ init(false);
 
 async function init(manual){
   try{
-    const r = await fetch(DATA_URL + "?t=" + Date.now(), { cache: "no-store" });
-    if(!r.ok) throw new Error("HTTP " + r.status);
-    const arr = JSON.parse(await r.text());
+    const res = await fetch(DATA_URL + "?t=" + Date.now(), { cache: "no-store" });
+    if(!res.ok) throw new Error(`HTTP ${res.status}（讀取 ${DATA_URL} 失敗）`);
+    const text = await res.text();
+    let arr;
+    try {
+      arr = JSON.parse(text);
+    } catch (e) {
+      console.error("JSON 解析失敗：原始內容：", text);
+      throw new Error("JSON 解析失敗：請檢查 public/data.json 格式是否為有效 JSON");
+    }
     rows = normalize(arr);
     render();
-    $meta.textContent = `已載入（${new Date().toLocaleString()}）`;
+    $meta.textContent = `已載入（${new Date().toLocaleString()}） · ${DATA_URL}`;
   }catch(e){
     rows = [];
     render();
     if(manual) alert("讀取失敗：" + e.message);
-    $meta.textContent = `尚未載入 · ${new Date().toLocaleTimeString()}`;
+    $meta.textContent = `讀取失敗：${e.message}`;
+    console.error("載入錯誤：", e);
   }
 }
 
@@ -40,7 +56,7 @@ function normalize(arr){
   return arr.map(item=>{
     if (Array.isArray(item)) {
       const name = String(item[0] ?? '');
-      const time = validHHmm(item[1]) ? item[1] : null;
+      const time = validHHmm(item[1]) ? String(item[1]) : null;
       return [name, time];
     }
     if (typeof item === 'string') return [item, null];
@@ -85,7 +101,7 @@ function render(focusLast=false){
     name.value = row[0];
     name.oninput = () => { row[0] = name.value; }; // 只改名字
 
-    // 時間不可編輯，純顯示（HHmm 或 ─）
+    // 時間唯讀顯示（HHmm 或 ─）
     const time = document.createElement('input');
     time.className = 'time';
     time.readOnly = true;
@@ -118,7 +134,7 @@ async function saveRemote(){
   const payload = {
     path: TARGET_PATH,
     content: JSON.stringify(rows, null, 2),
-    message: "chore: update data.json (names editable, time readonly)"
+    message: "chore: update data.json (names editor)"
   };
   try{
     const res = await fetch(API_URL, { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify(payload) });
