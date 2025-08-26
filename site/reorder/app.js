@@ -1,5 +1,5 @@
 // === 設定 ===
-const API_URL = "https://<你的-worker-子網域>.workers.dev/api/save"; // ← 換成實際 Worker URL
+const API_URL = "hadeseidolon-json-saver.b5cp686csv.workers.dev/api/save"; // ← 換成實際 Worker URL
 const TARGET_PATH = "public/data.json"; // 寫回 HadesEidolon 專案內的檔案
 
 // 狀態
