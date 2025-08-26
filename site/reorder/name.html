@@ -6,7 +6,7 @@
   <title>名字編輯器 · data.json</title>
   <style>
     :root{ --border:#e5e7eb; --muted:#6b7280 }
-    *{ box-sizing:border-box } body{ font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "PingFang TC", "Microsoft JhengHei", sans-serif; margin:0; color:#111 }
+    *{ box-sizing:border-box } body{ font-family: system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,"PingFang TC","Microsoft JhengHei",sans-serif; margin:0; color:#111 }
     header{ position:sticky; top:0; z-index:10; background:#ffffffcc; backdrop-filter:saturate(140%) blur(6px); border-bottom:1px solid var(--border) }
     .container{ max-width:960px; margin:0 auto; padding:14px 16px }
     h1{ margin:0 0 10px; font-size:20px }
@@ -14,12 +14,12 @@
     button, input{ padding:8px 10px; border:1px solid var(--border); border-radius:10px; background:#fff }
     .muted{ color:var(--muted); font-size:12px }
     .list{ border:1px solid var(--border); border-radius:12px; overflow:hidden }
-    .row{ display:flex; align-items:center; gap:10px; padding:10px 12px; border-bottom:1px solid var(--border) }
+    .row{ display:grid; grid-template-columns: 3em 1fr auto 7ch auto; gap:10px; align-items:center; padding:10px 12px; border-bottom:1px solid var(--border) }
     .row:last-child{ border-bottom:none }
-    .idx{ width:3em; text-align:right; color:#666 }
-    .name{ flex:1; min-width:220px }
-    .time{ width:7ch; text-align:center; color:#6b7280; background:#f8fafc }
-    .ghost{ height:44px; border:1px dashed #bbb; background:#f9fafb }
+    .idx{ text-align:right; color:#666 }
+    .name{ width:100%; min-width:220px }
+    .time{ width:100%; text-align:center; color:#6b7280; background:#f8fafc }
+    .ghost{ height:48px; border:1px dashed #bbb; background:#f9fafb; grid-column:1/-1 }
     .del{ color:#b91c1c; border-color:#f3c0c0 }
   </style>
 </head>
@@ -28,8 +28,6 @@
     <div class="container">
       <h1>名字編輯器 · <code>public/data.json</code></h1>
       <div class="toolbar">
-        <button id="add">新增一列</button>
-        <button id="alphasort">A→Z 排序（名字）</button>
         <button id="reload">重新讀取</button>
         <button id="save">儲存到遠端</button>
         <a href="./time.html" style="margin-left:auto">切換到「時間編輯器」→</a>
@@ -41,7 +39,7 @@
   <main class="container">
     <div id="list" class="list" aria-live="polite"></div>
     <p class="muted" style="margin-top:8px">
-      本頁只編輯 <b>名字</b>；右側時間以 <b>HHmm</b> 顯示且不可編輯。若要改時間，請至 <code>time.html</code>。
+      本頁可編輯<b>名字</b>；時間以 <b>HHmm</b> 顯示且不可編輯。若要改時間，請至 <code>time.html</code>。
     </p>
   </main>
 
