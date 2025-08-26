@@ -282,7 +282,7 @@
     // 臨時切成 30 欄 Grid
     target.classList.add('export-grid'); // 這個 class 不在 CSS；直接用內嵌 style 控制：
     target.style.display = "grid";
-    target.style.gridTemplateColumns = "repeat(30, 216px)";
+    target.style.gridTemplateColumns = "repeat(10, 216px)";
     target.style.gridAutoRows = "96px";
     target.style.gap = "8px";
     Array.from(target.children).forEach(el => { el.style.margin = "0"; });
@@ -318,7 +318,7 @@
     const table = document.createElement('table');
     table.className = 'export-table';
 
-    const perRow = 30;
+    const perRow = 5;
     const rowsCount = Math.ceil(items.length / perRow);
 
     for(let r=0; r<rowsCount; r++){
