@@ -3,7 +3,7 @@ const API_URL = "https://hadeseidolon-json-saver.b5cp686csv.workers.dev/api/save
 const TARGET_PATH = "public/data.json"; // 寫回 HadesEidolon 專案內的檔案
 
 // 狀態
-let MODE = 'txt';              // 'txt' | 'json'
+let MODE = 'json';              // 'txt' | 'json'
 let ITEMS = [];                // 目前顯示用的陣列（TXT 模式）
 let RAW_JSON = [];             // JSON 模式下的原始陣列（保留其他欄位）
 let JSON_KEY = '';             // JSON 顯示欄位 key
