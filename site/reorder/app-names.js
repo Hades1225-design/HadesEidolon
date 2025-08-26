@@ -1,4 +1,21 @@
 /* ===== 設定 ===== */
+/* === GitHub 讀檔設定（方案2：Contents API 直讀） === */
+const GH_OWNER  = "Hades1225-design";
+const GH_REPO   = "HadesEidolon";
+const GH_BRANCH = "main";
+
+async function fetchDataJSON(){
+  const url = `https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/contents/public/data.json?ref=${GH_BRANCH}&ts=${Date.now()}`;
+  const res = await fetch(url, {
+    headers: { "Accept": "application/vnd.github.v3.raw" }, // 直接拿純文字
+    cache: "no-store"
+});
+if(!res.ok) throw new Error(`HTTP ${res.status}（讀取 GitHub Contents 失敗）`);
+  const text = await res.text();
+  try { return JSON.parse(text); }
+  catch(e){ console.error("data.json 內容：", text); throw new Error("JSON 解析失敗"); }
+}
+
 const API_URL     = "https://hadeseidolon-json-saver.b5cp686csv.workers.dev/api/save"; // ← 換成你的 Worker URL
 const TARGET_PATH = "public/data.json";
 const DATA_URL    = "/HadesEidolon/public/data.json"; // 固定 GitHub Pages 路徑
