@@ -1,7 +1,7 @@
 /* ===== 設定 ===== */
 const API_URL     = "https://hadeseidolon-json-saver.b5cp686csv.workers.dev/api/save"; // ← 換成你的 Worker URL
 const TARGET_PATH = "public/data.json";
-const DATA_URL    = "../../public/data.json"; // 與 index.html 的相對路徑
+const DATA_URL    = "../../public/data.json";
 
 /* ===== 狀態：rows = [ [name, hhmm|null], ... ] ===== */
 let rows = [];
