@@ -1,15 +1,9 @@
-/* ===== 設定：只需改 API_URL ===== */
+/* ===== 設定（請改 API_URL） ===== */
 const API_URL     = "https://<你的-worker>.workers.dev/api/save"; // ← 換成你的 Worker URL
 const TARGET_PATH = "public/data.json";
 
-/* 自動推算專案根路徑（/HadesEidolon）以避免相對路徑踩雷 */
-const BASE_PATH = (() => {
-  const parts = window.location.pathname.split('/').filter(Boolean);
-  // name.html 在 /site/reorder 下 → 專案根目錄應該砍掉最後兩層
-  return '/' + parts.slice(0, 1).join('/');
-})();
-
-const DATA_URL = `${BASE_PATH}/${TARGET_PATH}`; // 結果：/HadesEidolon/public/data.json
+/* 直接寫死 GitHub Pages 下的路徑，避免相對路徑踩雷 */
+const DATA_URL    = "/HadesEidolon/public/data.json";
 
 /* ===== 狀態：rows = [ [name, hhmm|null], ... ] ===== */
 let rows = [];
@@ -26,6 +20,7 @@ document.getElementById('save').onclick      = saveRemote;
 /* ===== 啟動 ===== */
 init(false);
 
+/* ------------------ 載入 ------------------ */
 async function init(manual){
   try{
     const res = await fetch(DATA_URL + "?t=" + Date.now(), { cache: "no-store" });
@@ -36,7 +31,7 @@ async function init(manual){
       arr = JSON.parse(text);
     } catch (e) {
       console.error("JSON 解析失敗：原始內容：", text);
-      throw new Error("JSON 解析失敗：請檢查 public/data.json 格式是否為有效 JSON");
+      throw new Error("JSON 解析失敗：請檢查 public/data.json 是否為有效 JSON 陣列");
     }
     rows = normalize(arr);
     render();
@@ -50,7 +45,7 @@ async function init(manual){
   }
 }
 
-/* 任何舊格式 → 轉成 [name, hhmm|null] */
+/* 舊格式 → 轉成 [name, hhmm|null] */
 function normalize(arr){
   if(!Array.isArray(arr)) return [];
   return arr.map(item=>{
@@ -70,6 +65,7 @@ function normalize(arr){
   });
 }
 
+/* ------------------ 介面 ------------------ */
 function render(focusLast=false){
   $list.innerHTML = '';
   rows.forEach((row, i)=>{
@@ -77,7 +73,7 @@ function render(focusLast=false){
     div.className = 'row';
     div.draggable = true;
 
-    // drag reorder
+    // 拖曳排序
     div.addEventListener('dragstart', (e)=>{ e.dataTransfer.setData('text/plain', String(i)); div._ghost = mkGhost(div); });
     div.addEventListener('dragend', ()=>{ div._ghost?.remove(); });
     div.addEventListener('dragover', (e)=>{
@@ -96,8 +92,8 @@ function render(focusLast=false){
 
     const idx  = document.createElement('span'); idx.className='idx';  idx.textContent = i+1;
 
-    const name = document.createElement('input'); 
-    name.className='name'; 
+    const name = document.createElement('input');
+    name.className='name';
     name.value = row[0];
     name.oninput = () => { row[0] = name.value; }; // 只改名字
 
@@ -107,8 +103,8 @@ function render(focusLast=false){
     time.readOnly = true;
     time.value = validHHmm(row[1]) ? row[1] : '—';
 
-    const del  = document.createElement('button'); 
-    del.className='del'; 
+    const del  = document.createElement('button');
+    del.className='del';
     del.textContent='刪除';
     del.onclick = () => { rows.splice(i,1); render(); };
 
@@ -123,6 +119,7 @@ function render(focusLast=false){
 
 function mkGhost(el){ const g=document.createElement('div'); g.className='ghost'; el.parentNode.insertBefore(g, el.nextSibling); return g; }
 
+/* ------------------ 驗證 ------------------ */
 function validHHmm(v){
   if(typeof v !== 'string') return false;
   if(!/^\d{4}$/.test(v)) return false;
@@ -130,16 +127,24 @@ function validHHmm(v){
   return hh>=0 && hh<=23 && mm>=0 && mm<=59;
 }
 
+/* ------------------ 儲存 ------------------ */
 async function saveRemote(){
   const payload = {
     path: TARGET_PATH,
     content: JSON.stringify(rows, null, 2),
-    message: "chore: update data.json (names editor)"
+    message: "chore: update data.json (names editor, fixed DATA_URL)"
   };
   try{
-    const res = await fetch(API_URL, { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify(payload) });
+    const res = await fetch(API_URL, {
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body: JSON.stringify(payload)
+    });
     const out = await res.json().catch(()=> ({}));
     if(!res.ok) throw new Error(out.github_raw || out.error || out.detail || 'unknown');
     alert("✅ 已儲存！" + (out.commit? " commit: "+out.commit:""));
-  }catch(e){ alert("❌ 儲存失敗：" + e.message); }
+    $meta.textContent = `已儲存（${new Date().toLocaleString()}）`;
+  }catch(e){
+    alert("❌ 儲存失敗：" + e.message);
+  }
 }
