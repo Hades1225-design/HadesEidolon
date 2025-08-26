@@ -257,6 +257,8 @@
     return bestIdx;
   }
 
+  
+  
   async function downloadPNG(){
     if (!window.html2canvas){
       alert("圖片匯出工具載入中，請再試一次。");
@@ -269,6 +271,23 @@
     target.classList.add('export-grid');
     document.body.classList.add('exporting');
 
+    // 切換為 30 欄 Grid 模式
+    target.classList.add('export-grid');
+    document.body.classList.add('exporting');
+    
+    // 等待字型就緒，避免量測造成位移/重疊
+    if (document.fonts && document.fonts.ready) {
+      try { await document.fonts.ready; } catch {}
+    }
+    
+    const canvas = await html2canvas(target, {
+      backgroundColor: '#ffffff',
+      scale: 2,
+      useCORS: true,
+      windowWidth: target.scrollWidth,
+      windowHeight: target.scrollHeight
+    });
+    
     // 使用 html2canvas 匯出
     const canvas = await html2canvas(target, {
       backgroundColor: '#ffffff',
