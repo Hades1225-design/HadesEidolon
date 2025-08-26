@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>天堂 - BOSS時間</title>
+  <title>展示頁 · data.json</title>
   <style>
     :root{
       --border:#e5e7eb;
@@ -33,49 +33,15 @@
       border-radius:10px; background:#fff; color:#111; text-decoration:none; display:inline-block; cursor:pointer;
     }
 
-    /* 預設：單列垂直清單（置中） */
-    .list{
-      display:flex; flex-direction:column; gap:8px; margin-top:12px;
-    }
-
-    /* 匯出模式：每列 30 張卡片 
-    .export-grid{
-      display:grid !important;
-      grid-template-columns: repeat(30, minmax(0, 1fr));
-      gap:8px;
-      justify-content:center;
-      align-items:start;
-    }
-    */
-        /* 取代原本的 .export-grid 定義 */
-    /* 匯出版：多列 Grid，一列最多 30 張 */
-    .export-grid{
-      display:grid !important;
-      grid-template-columns: repeat(20, 216px); /* 每列 30 張 min-content */
-      grid-auto-rows: repeat(10, 96px);
-      gap:8px;
-      justify-content:flex-start;
-      align-content:start;
-      width:max-content;
-    }
-    
-    /* 匯出版卡片固定大小，取消 margin:auto */
-    .export-grid .card{
-      margin:0;
-      width:216px;
-      height:96px;
-    }  
-     
-    /* 固定卡片大小：寬 216px，高 96px；置中 */
+    /* 頁面顯示：單列垂直清單（置中） */
+    .list{ display:flex; flex-direction:column; gap:8px; margin-top:12px }
     .card{
       background:var(--card-bg); border:1px solid var(--border); border-radius:10px;
-      width:216px; height:96px; padding:10px;
-      margin:0 auto;
+      width:216px; height:96px; padding:10px; margin:0 auto;
       display:flex; flex-direction:column; justify-content:center; align-items:center; text-align:center;
     }
     .name{ font-weight:600; line-height:1.2; margin-bottom:6px; word-break:break-word }
     .time{ font-variant-numeric:tabular-nums; color:#374151 }
-
     .status-green{ background: var(--green); }
     .status-red{ background: var(--red); }
     .status-yellow{ background: var(--yellow); }
@@ -88,24 +54,57 @@
 
     /* 匯出時加白底 */
     .exporting { background:#fff !important; }
+
+    /* 表格匯出樣式（匯出時動態掛在暫存節點上） */
+    .export-table-wrap{
+      position: fixed; left: -200vw; top: 0; /* 螢幕外，避免閃爍 */
+      background: #fff;
+      padding: 12px;
+      border: 1px solid var(--border);
+    }
+    .export-table{
+      border-collapse: collapse;
+      table-layout: fixed;          /* 固定欄寬 */
+      background:#fff;
+    }
+    .export-table td{
+      width: 216px;                 /* 單格寬（對齊卡片）*/
+      height: 96px;                 /* 單格高（對齊卡片）*/
+      border: 1px solid var(--border);
+      vertical-align: middle;
+      text-align: center;
+      padding: 6px 4px;
+      font-size: 14px;
+    }
+    .export-table .cell-name{
+      display:block; font-weight:600; margin-bottom:4px; word-break:break-word;
+    }
+    .export-table .cell-time{
+      display:block; font-variant-numeric:tabular-nums; color:#374151;
+    }
+    .export-green{ background: var(--green); }
+    .export-red{ background: var(--red); }
+    .export-yellow{ background: var(--yellow); }
   </style>
+
   <!-- html2canvas（DOM 轉成圖片） -->
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js" defer></script>
 </head>
 <body>
   <header>
     <div class="container">
-      <h1>BOSS時間</h1>
+      <h1>展示頁</h1>
       <div class="toolbar">
         <button id="reload">重新讀取</button>
-        <a class="btn" href="./name.html">編輯排序</a>
-        <a class="btn" href="./time.html">編輯時間</a>
-        <button id="download">下載 PNG</button>
+        <a class="btn" href="./name.html">編輯排序（name.html）</a>
+        <a class="btn" href="./time.html">編輯時間（time.html）</a>
+        <button id="download-cards">下載 PNG（卡片）</button>
+        <button id="download-table">下載 PNG（表格）</button>
 
         <div class="legend" style="margin-left:8px">
           <span class="chip green">已重生</span>
-          <span class="chip red">超時</span>
-          <span class="chip yellow">即將重生</span>
+          <span class="chip red">今天已過去</span>
+          <span class="chip yellow">未來中最接近現在</span>
         </div>
         <span id="meta" class="meta" aria-live="polite" style="margin-left:auto"></span>
       </div>
@@ -117,14 +116,31 @@
   </main>
 
   <script>
-  const DATA_URL = "https://raw.githubusercontent.com/Hades1225-design/HadesEidolon/main/public/data.json";
+  /* === GitHub 讀檔設定（方案2：Contents API 直讀） === */
+  const GH_OWNER  = "Hades1225-design";
+  const GH_REPO   = "HadesEidolon";
+  const GH_BRANCH = "main";
+
+  async function fetchDataJSON(){
+    const url = `https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/contents/public/data.json?ref=${GH_BRANCH}&ts=${Date.now()}`;
+    const res = await fetch(url, {
+      headers: { "Accept": "application/vnd.github.v3.raw" }, // 直接拿純文字
+      cache: "no-store"
+    });
+    if(!res.ok) throw new Error(`HTTP ${res.status}（讀取 GitHub Contents 失敗）`);
+    const text = await res.text();
+    try { return JSON.parse(text); }
+    catch(e){ console.error("data.json 內容：", text); throw new Error("JSON 解析失敗"); }
+  }
+
   const GITHUB_API = "https://api.github.com/repos/Hades1225-design/HadesEidolon/commits?path=public/data.json&page=1&per_page=1";
   const WRAP_CUTOFF = "0559"; // 00:00–05:59 視為隔日清晨（不標紅）
 
   const $list = document.getElementById('list');
   const $meta = document.getElementById('meta');
   document.getElementById('reload').onclick = () => init(true);
-  document.getElementById('download').onclick = downloadPNG;
+  document.getElementById('download-cards').onclick = downloadPNG_Cards;
+  document.getElementById('download-table').onclick = downloadPNG_Table;
 
   let items = []; // [ [name, hhmm|null], ... ]
 
@@ -132,12 +148,10 @@
 
   async function init(manual){
     try{
-      const r = await fetch(DATA_URL + "?t=" + Date.now(), { cache:"no-store" });
-      if(!r.ok) throw new Error(`HTTP ${r.status}（讀取 ${DATA_URL} 失敗）`);
-      const arr = JSON.parse(await r.text());
+      const arr = await fetchDataJSON();
       items = normalize(arr);
 
-      // 以距離現在分鐘差排序（循環24h）
+      // 以距離現在分鐘差排序（循環24h）：過去在前、未來在後；null 最前
       items.sort((a,b)=>{
         const da = diffFromNow(a[1]);
         const db = diffFromNow(b[1]);
@@ -178,6 +192,7 @@
     });
   }
 
+  // 排序用：回傳相對現在的差（分鐘）
   function diffFromNow(hhmm){
     if(hhmm === null) return -1e9; // null 最前
     const now = nowMinutes();
@@ -185,7 +200,7 @@
     const raw = tm - now;
     const isEarlyMorning = hhmm <= WRAP_CUTOFF;
     if(raw < 0 && isEarlyMorning){
-      return raw + 1440;
+      return raw + 1440; // 視為明天清晨→轉正
     }
     return raw;
   }
@@ -216,9 +231,9 @@
         const isEarlyMorning = t <= WRAP_CUTOFF;
 
         if(raw < 0 && !isEarlyMorning){
-          card.classList.add('status-red');
+          card.classList.add('status-red');    // 今天已過去
         }else if(idx === nextIdx){
-          card.classList.add('status-yellow');
+          card.classList.add('status-yellow'); // 未來中最近
         }
       }
 
@@ -248,7 +263,7 @@
     arr.forEach(([_, t], idx)=>{
       if(typeof t === 'string' && /^\d{4}$/.test(t)){
         const tm = HHmmToMinutes(t);
-        const delta = (tm - now + 1440) % 1440;
+        const delta = (tm - now + 1440) % 1440; // 0..1439
         if (delta > 0 && delta < bestDelta){
           bestDelta = delta;
           bestIdx = idx;
@@ -258,58 +273,124 @@
     return bestIdx;
   }
 
-  
-  
-  async function downloadPNG(){
-    if (!window.html2canvas){
-      alert("圖片匯出工具載入中，請再試一次。");
-      return;
-    }
-  
+  /* ========= 匯出 PNG（卡片：維持你原本的 Grid 30/列） ========= */
+  async function downloadPNG_Cards(){
+    if (!window.html2canvas){ alert("圖片匯出工具載入中，請再試一次。"); return; }
     const target = document.getElementById('list');
     const originalClass = target.className;
-  
-    // 切換為 Grid 匯出模式
-    target.classList.add('export-grid');
+
+    // 臨時切成 30 欄 Grid
+    target.classList.add('export-grid'); // 這個 class 不在 CSS；直接用內嵌 style 控制：
+    target.style.display = "grid";
+    target.style.gridTemplateColumns = "repeat(30, 216px)";
+    target.style.gridAutoRows = "96px";
+    target.style.gap = "8px";
+    Array.from(target.children).forEach(el => { el.style.margin = "0"; });
+
     document.body.classList.add('exporting');
-  
-    // 等待字型載入完成，避免位置錯亂
-    if (document.fonts && document.fonts.ready) {
-      try { await document.fonts.ready; } catch {}
-    }
-  
-    // 匯出
+    if (document.fonts && document.fonts.ready) { try { await document.fonts.ready; } catch{} }
+
     const canvas = await html2canvas(target, {
-      backgroundColor: '#ffffff',
-      scale: 2,
-      useCORS: true,
-      windowWidth: target.scrollWidth,
-      windowHeight: target.scrollHeight
+      backgroundColor:'#ffffff', scale:2, useCORS:true,
+      windowWidth: target.scrollWidth, windowHeight: target.scrollHeight
     });
-  
-    const url = canvas.toDataURL('image/png');
-    triggerDownload(url, `cards_${stamp()}.png`);
-  
-    // 還原原本單列模式
+
+    triggerDownload(canvas.toDataURL('image/png'), `cards_${stamp()}.png`);
+
+    // 還原
     target.className = originalClass;
+    target.removeAttribute('style');
+    Array.from(target.children).forEach(el => { el.style.removeProperty('margin'); });
     document.body.classList.remove('exporting');
   }
 
+  /* ========= 匯出 PNG（表格：每行 30 欄，左到右、上到下） ========= */
+  async function downloadPNG_Table(){
+    if (!window.html2canvas){ alert("圖片匯出工具載入中，請再試一次。"); return; }
 
+    // 先準備顏色判定（跟畫面相同邏輯）
+    const nowHHmm = hhmmNow();
+    const nextIdx = findNextClosestIndex(items, nowHHmm);
+
+    // 動態建立隱藏表格（放到畫面外）
+    const wrap = document.createElement('div');
+    wrap.className = 'export-table-wrap';
+    const table = document.createElement('table');
+    table.className = 'export-table';
+
+    const perRow = 30;
+    const rowsCount = Math.ceil(items.length / perRow);
+
+    for(let r=0; r<rowsCount; r++){
+      const tr = document.createElement('tr');
+      for(let c=0; c<perRow; c++){
+        const idx = r*perRow + c;
+        const td  = document.createElement('td');
+
+        if(idx < items.length){
+          const [name, t] = items[idx] || ["", null];
+
+          // 內容
+          const nSpan = document.createElement('span');
+          nSpan.className = 'cell-name';
+          nSpan.textContent = name || '—';
+
+          const tSpan = document.createElement('span');
+          tSpan.className = 'cell-time';
+          if(t === null){
+            tSpan.textContent = '已重生';
+            td.classList.add('export-green');
+          }else{
+            tSpan.textContent = toDisplay(t);
+            const raw = HHmmToMinutes(t) - nowMinutes();
+            const isEarlyMorning = t <= WRAP_CUTOFF;
+
+            if(raw < 0 && !isEarlyMorning){
+              td.classList.add('export-red');      // 今天已過去
+            }else if(idx === nextIdx){
+              td.classList.add('export-yellow');   // 未來中最近
+            }
+          }
+
+          td.append(nSpan, tSpan);
+        }else{
+          td.innerHTML = '&nbsp;'; // 補空格以維持框線
+        }
+        tr.appendChild(td);
+      }
+      table.appendChild(tr);
+    }
+
+    wrap.appendChild(table);
+    document.body.appendChild(wrap);
+
+    document.body.classList.add('exporting');
+    if (document.fonts && document.fonts.ready) { try { await document.fonts.ready; } catch{} }
+
+    const canvas = await html2canvas(wrap, {
+      backgroundColor:'#ffffff', scale:2, useCORS:true,
+      windowWidth: wrap.scrollWidth, windowHeight: wrap.scrollHeight
+    });
+
+    triggerDownload(canvas.toDataURL('image/png'), `table_${stamp()}.png`);
+
+    // 清理
+    document.body.removeChild(wrap);
+    document.body.classList.remove('exporting');
+  }
+
+  /* ========= 工具 ========= */
   function triggerDownload(url, filename){
     const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click(); a.remove();
   }
   function stamp(){
-    const d = new Date();
-    const z = n => String(n).padStart(2,'0');
+    const d = new Date(), z = n => String(n).padStart(2,'0');
     return `${d.getFullYear()}${z(d.getMonth()+1)}${z(d.getDate())}_${z(d.getHours())}${z(d.getMinutes())}${z(d.getSeconds())}`;
   }
 
+  // 顯示 GitHub 上 data.json 的最後修改時間
   async function updateMetaTime(){
     try{
       const r = await fetch(GITHUB_API, { cache:"no-store" });
