@@ -42,15 +42,15 @@
       border: 1px solid var(--border);
       border-radius: 5px;
       width: 190px;
-      height: 40px;
-      padding: 10px 12px;
+      height: 35px;
+      padding: 5px 6px;
       margin: 0 auto;
       display: flex;
       flex-direction: row;            /* 橫向排版 */
       align-items: center;            /* 垂直置中 */
       justify-content: space-between; /* 左右對齊 */
       text-align: left;               /* 名字靠左 */
-      gap: 6px;
+      gap: 3px;
       box-sizing: border-box;
     }
     
@@ -92,7 +92,7 @@
     .export-table-wrap{
       position: fixed; left: -200vw; top: 0; /* 螢幕外，避免閃爍 */
       background: #fff;
-      padding: 12px;
+      padding: 6px;
       border: 1px solid var(--border);
     }
     .export-table{
@@ -317,8 +317,8 @@
     // 臨時切成 30 欄 Grid
     target.classList.add('export-grid'); // 這個 class 不在 CSS；直接用內嵌 style 控制：
     target.style.display = "grid";
-    target.style.gridTemplateColumns = "repeat(5, 190px)";
-    target.style.gridAutoRows = "40px";
+    target.style.gridTemplateColumns = "repeat(4, 190px)";
+    target.style.gridAutoRows = "25px";
     target.style.gap = "8px";
     Array.from(target.children).forEach(el => { el.style.margin = "0"; });
 
