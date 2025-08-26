@@ -1,5 +1,5 @@
 /* ===== 設定 ===== */
-const API_URL     = "https://hadeseidolon-json-saver.b5cp686csv.workers.dev/api/save"; // ← 換成你的 Worker URL
+const API_URL     = "https://<你的-worker>.workers.dev/api/save"; // ← 換成你的 Worker URL
 const TARGET_PATH = "public/data.json";
 const DATA_URL    = "../../public/data.json";
 
@@ -58,7 +58,7 @@ function render(focusLast=false){
   $list.innerHTML = '';
   rows.forEach((row, i)=>{
     const div = document.createElement('div');
-    div.className = 'row'; 
+    div.className = 'row';
     div.draggable = true;
 
     // drag reorder
@@ -80,13 +80,23 @@ function render(focusLast=false){
 
     const idx  = document.createElement('span'); idx.className='idx';  idx.textContent = i+1;
 
-    const name = document.createElement('input'); name.className='name'; name.value = row[0];
+    const name = document.createElement('input'); 
+    name.className='name'; 
+    name.value = row[0];
     name.oninput = () => { row[0] = name.value; }; // 只改名字
 
-    const del  = document.createElement('button'); del.className='del'; del.textContent='刪除';
+    // 時間不可編輯，純顯示（HHmm 或 ─）
+    const time = document.createElement('input');
+    time.className = 'time';
+    time.readOnly = true;
+    time.value = validHHmm(row[1]) ? row[1] : '—';
+
+    const del  = document.createElement('button'); 
+    del.className='del'; 
+    del.textContent='刪除';
     del.onclick = () => { rows.splice(i,1); render(); };
 
-    div.append(idx, name, del);
+    div.append(idx, name, time, del);
     $list.appendChild(div);
   });
 
@@ -108,7 +118,7 @@ async function saveRemote(){
   const payload = {
     path: TARGET_PATH,
     content: JSON.stringify(rows, null, 2),
-    message: "chore: update data.json (names only)"
+    message: "chore: update data.json (names editable, time readonly)"
   };
   try{
     const res = await fetch(API_URL, { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify(payload) });
