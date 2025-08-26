@@ -38,7 +38,7 @@
       display:flex; flex-direction:column; gap:8px; margin-top:12px;
     }
 
-    /* 匯出模式：每列 30 張卡片 */
+    /* 匯出模式：每列 30 張卡片 
     .export-grid{
       display:grid !important;
       grid-template-columns: repeat(30, minmax(0, 1fr));
@@ -46,6 +46,24 @@
       justify-content:center;
       align-items:start;
     }
+    */
+        /* 取代原本的 .export-grid 定義 */
+    .export-grid{
+      display:grid !important;
+      grid-template-columns: repeat(30, 216px); /* 每列 30 張，欄寬固定 216px */
+      gap:8px;
+      justify-content:flex-start;  /* 靠左排 */
+      align-content:start;
+      width:max-content;           /* 讓內容決定寬度，避免被容器擠壓 */
+    }
+    
+    /* 匯出時不要置中、不要自動外距 */
+    .export-grid .card{
+      margin:0;        /* 取消 margin:auto */
+      width:216px;     /* 再次鎖定寬度（保險）*/
+      height:96px;
+    }
+
 
     /* 固定卡片大小：寬 216px，高 96px；置中 */
     .card{
