@@ -2,6 +2,7 @@
 const API_URL     = "https://hadeseidolon-json-saver.b5cp686csv.workers.dev/api/save"; // ← 換成你的 Worker URL
 const TARGET_PATH = "public/data.json";
 const DATA_URL    = "/HadesEidolon/public/data.json"; // 固定 GitHub Pages 路徑
+const GITHUB_API  = "https://api.github.com/repos/Hades1225-design/HadesEidolon/commits?path=public/data.json&page=1&per_page=1";
 
 /* ===== 狀態：rows = [ [name, hhmm|null], ... ] ===== */
 let rows = [];
@@ -24,13 +25,32 @@ async function init(manual){
     const arr = JSON.parse(await r.text());
     rows = normalize(arr);
     render();
-    $meta.textContent = `已載入（${new Date().toLocaleString()}）`;
+    await updateMetaTime();
   }catch(e){
     rows = [];
     render();
     if(manual) alert("讀取失敗：" + e.message);
     $meta.textContent = `讀取失敗：${e.message}`;
     console.error("載入錯誤：", e);
+  }
+}
+
+/* 從 GitHub 取得 data.json 的最後修改時間 */
+async function updateMetaTime(){
+  try {
+    const res = await fetch(GITHUB_API, { cache: "no-store" });
+    if(!res.ok) throw new Error(`HTTP ${res.status}（讀取 GitHub commit 失敗）`);
+    const commits = await res.json();
+    if (Array.isArray(commits) && commits.length > 0) {
+      const date = commits[0].commit.committer.date;
+      const local = new Date(date).toLocaleString();
+      $meta.textContent = `最後更新：${local}`;
+    } else {
+      $meta.textContent = `最後更新時間未知`;
+    }
+  } catch(e) {
+    console.error("讀取最後更新時間失敗：", e);
+    $meta.textContent = `最後更新時間讀取失敗`;
   }
 }
 
@@ -74,20 +94,19 @@ function render(){
     const time = document.createElement('input');
     time.type = 'tel';
     time.inputMode = 'numeric';
-    time.maxLength = 5;           // 顯示含冒號要最多 5
-    time.placeholder = 'HHmm';
+    time.maxLength = 5;           // 顯示含冒號最多 5
+    time.placeholder = 'HH:mm';
     time.className='w-time';
     time.value = row[1] ? toDisplay(row[1]) : '';
 
-    // 即時輸入：逐位限制 + 顯示冒號
+    // 即時輸入：逐位限制 + 顯示冒號 + 4碼自動跳下一格
     time.addEventListener('input', () => {
       let digits = onlyDigits(time.value);
-      digits = clampPerDigit(digits).slice(0,4); // 逐位限制 + 最多4位
-      time.value = toDisplay(digits);            // 顯示成 HH:mm 或部分顯示
+      digits = clampPerDigit(digits).slice(0,4);
+      time.value = toDisplay(digits);
 
       if (digits.length === 4 && validHHmm(digits)) {
         rows[i][1] = digits;
-        // 自動跳到下一格
         const next = inputs[i + 1];
         if (next) { next.focus(); next.select(); }
       } else if (digits === '') {
@@ -99,7 +118,7 @@ function render(){
     const finalize = () => {
       let digits = onlyDigits(time.value);
       if (digits.length > 0 && digits.length < 4) {
-        digits = digits.padStart(4, '0'); // 往前補 0
+        digits = digits.padStart(4, '0'); // 往前補0
       }
       digits = clampPerDigit(digits).slice(0,4);
       time.value = toDisplay(digits);
@@ -173,7 +192,7 @@ async function saveRemote(){
   const payload = {
     path: TARGET_PATH,
     content: JSON.stringify(rows, null, 2),
-    message: "chore: update data.json (time editor, display HH:mm but store HHmm)"
+    message: "chore: update data.json (time editor shows last modified)"
   };
   try{
     const res = await fetch(API_URL, {
@@ -184,11 +203,9 @@ async function saveRemote(){
     const outText = await res.text();
     let out; try { out = JSON.parse(outText); } catch { out = { raw: outText }; }
     if(!res.ok) throw new Error(out.github_raw || out.error || out.detail || 'unknown');
-    alert(`✅ 已儲存成功！${out.commit ? ' commit: '+out.commit : ''}`);
-    $meta.textContent = `已儲存（${new Date().toLocaleString()}）`;
+    alert("✅ 已儲存成功！");
+    await updateMetaTime(); // 儲存後重新取得最後更新時間
   }catch(e){
     alert("❌ 儲存失敗：" + e.message);
   }
 }
-
-
