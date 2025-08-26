@@ -3,23 +3,188 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>HadesEidolon · 展示入口</title>
+  <title>展示頁 · data.json</title>
   <style>
-    body{ font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "PingFang TC","Microsoft JhengHei", sans-serif; margin:0; display:grid; place-items:center; min-height:100dvh; }
-    .card{ max-width:560px; padding:24px; border:1px solid #e5e7eb; border-radius:16px }
-    h1{ margin:0 0 10px; font-size:22px }
-    p{ margin:8px 0 16px; color:#6b7280 }
-    a.button{ display:inline-block; padding:10px 14px; margin-right:8px; border:1px solid #e5e7eb; border-radius:10px; text-decoration:none; color:#111; background:#fff }
+    :root{
+      --border:#e5e7eb;
+      --muted:#6b7280;
+      --red:#fee2e2;
+      --green:#dcfce7;
+      --card-bg:#ffffff;
+    }
+    *{ box-sizing:border-box }
+    body{ margin:0; font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,"PingFang TC","Microsoft JhengHei",sans-serif; color:#111; background:#fafafa }
+    header{ position:sticky; top:0; z-index:10; background:#ffffffcc; backdrop-filter:saturate(140%) blur(6px); border-bottom:1px solid var(--border) }
+    .container{ max-width:1600px; margin:0 auto; padding:12px 16px }
+    h1{ margin:0 0 8px; font-size:20px }
+    .meta{ color:var(--muted); font-size:12px }
+    .toolbar{ display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-top:6px }
+    button{ padding:8px 10px; border:1px solid var(--border); border-radius:10px; background:#fff }
+
+    /* 30張卡片一列（固定 30 欄） */
+    .grid{
+      display:grid;
+      grid-template-columns: repeat(30, minmax(0, 1fr));
+      gap:8px;
+      margin-top:12px;
+    }
+    .card{
+      background:var(--card-bg);
+      border:1px solid var(--border);
+      border-radius:10px;
+      padding:10px;
+      min-height:70px;
+      display:flex; flex-direction:column; justify-content:center; align-items:center;
+      text-align:center;
+    }
+    .name{ font-weight:600; line-height:1.2; margin-bottom:6px; word-break:break-word }
+    .time{ font-variant-numeric:tabular-nums; color:#374151 }
+    .status-green{ background: var(--green); }
+    .status-red{ background: var(--red); }
+    .legend{ display:flex; gap:10px; align-items:center; color:var(--muted); font-size:12px; }
+    .chip{ display:inline-block; padding:2px 8px; border-radius:999px; border:1px solid var(--border); }
+    .chip.red{ background:var(--red) }
+    .chip.green{ background:var(--green) }
   </style>
 </head>
 <body>
-  <div class="card">
-    <h1>HadesEidolon</h1>
-    <p>這是暫時的入口頁，未來可改成排行榜/圖表等展示。</p>
-    <p>
-      <a class="button" href="./name.html">名字編輯器</a>
-      <a class="button" href="./time.html">時間編輯器</a>
-    </p>
-  </div>
+  <header>
+    <div class="container">
+      <h1>展示頁</h1>
+      <div class="toolbar">
+        <button id="reload">重新讀取</button>
+        <div class="legend">
+          <span class="chip green">已重生</span>
+          <span class="chip red">時間舊於目前時間</span>
+        </div>
+        <span id="meta" class="meta" aria-live="polite" style="margin-left:auto"></span>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    <div id="grid" class="grid" aria-live="polite"></div>
+  </main>
+
+  <script>
+  // 設定
+  const DATA_URL   = "/HadesEidolon/public/data.json";
+  const GITHUB_API = "https://api.github.com/repos/Hades1225-design/HadesEidolon/commits?path=public/data.json&page=1&per_page=1";
+
+  const $grid = document.getElementById('grid');
+  const $meta = document.getElementById('meta');
+  document.getElementById('reload').onclick = () => init(true);
+
+  let rows = []; // [ [name, hhmm|null], ... ]
+
+  init(false);
+
+  async function init(manual){
+    try{
+      const r = await fetch(DATA_URL + "?t=" + Date.now(), { cache:"no-store" });
+      if(!r.ok) throw new Error(`HTTP ${r.status}（讀取 ${DATA_URL} 失敗）`);
+      const arr = JSON.parse(await r.text());
+      rows = normalize(arr);
+      sortOldToNew(rows);
+      render();
+      await updateMetaTime();
+    }catch(e){
+      rows = [];
+      render();
+      if(manual) alert("讀取失敗：" + e.message);
+      $meta.textContent = `讀取失敗：${e.message}`;
+      console.error(e);
+    }
+  }
+
+  function normalize(arr){
+    if(!Array.isArray(arr)) return [];
+    return arr.map(item=>{
+      if(Array.isArray(item)){
+        const name = String(item[0] ?? '');
+        const t = item[1];
+        const time = (typeof t === 'string' && /^\d{4}$/.test(t)) ? t : null;
+        return [name, time];
+      }
+      if(typeof item === 'string') return [item, null];
+      if(item && typeof item === 'object'){
+        const name = String(item.名字 ?? item.name ?? '');
+        const t = item.時間 ?? item.time;
+        const time = (typeof t === 'string' && /^\d{4}$/.test(t)) ? t : null;
+        return [name, time];
+      }
+      return ['', null];
+    });
+  }
+
+  // 排序：null 視為最舊（排最前），其餘按 HHmm 由小到大
+  function sortOldToNew(a){
+    a.sort((x,y)=>{
+      const tx = x[1], ty = y[1];
+      if(tx === null && ty === null) return 0;
+      if(tx === null) return -1;
+      if(ty === null) return 1;
+      return tx.localeCompare(ty); // "0003" < "0915" < "2231"
+    });
+  }
+
+  function render(){
+    $grid.innerHTML = '';
+    const now = hhmmNow(); // "HHmm"
+
+    rows.forEach(([name, t])=>{
+      const card = document.createElement('div');
+      card.className = 'card';
+
+      const title = document.createElement('div');
+      title.className = 'name';
+      title.textContent = name || '—';
+
+      const sub = document.createElement('div');
+      sub.className = 'time';
+      if(t === null){
+        sub.textContent = '已重生';
+        card.classList.add('status-green');
+      }else{
+        sub.textContent = toDisplay(t); // HH:mm
+        if(t < now){ // 舊於目前時間 → 淡紅
+          card.classList.add('status-red');
+        }
+      }
+
+      card.append(title, sub);
+      $grid.appendChild(card);
+    });
+  }
+
+  function hhmmNow(){
+    const d = new Date();
+    const h = String(d.getHours()).padStart(2,'0');
+    const m = String(d.getMinutes()).padStart(2,'0');
+    return h + m;
+  }
+
+  function toDisplay(hhmm){
+    return hhmm.slice(0,2) + ':' + hhmm.slice(2,4);
+  }
+
+  // 顯示 GitHub 上 data.json 的最後修改時間
+  async function updateMetaTime(){
+    try{
+      const r = await fetch(GITHUB_API, { cache:"no-store" });
+      if(!r.ok) throw new Error(`HTTP ${r.status}（讀取 GitHub commit 失敗）`);
+      const commits = await r.json();
+      if(Array.isArray(commits) && commits.length){
+        const iso = commits[0].commit.committer.date;
+        $meta.textContent = `最後更新：${new Date(iso).toLocaleString()}`;
+      }else{
+        $meta.textContent = `最後更新時間未知`;
+      }
+    }catch(e){
+      $meta.textContent = `最後更新時間讀取失敗`;
+      console.error(e);
+    }
+  }
+  </script>
 </body>
 </html>
