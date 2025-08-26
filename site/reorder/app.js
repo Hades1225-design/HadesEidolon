@@ -1,14 +1,14 @@
 /* ================== 設定（請改這一行） ================== */
 const API_URL   = "https://hadeseidolon-json-saver.b5cp686csv.workers.dev/api/save"; // 例：https://hades-json-saver.xxxxx.workers.dev/api/save
-const TARGET_PATH = "public/data.json";                               // 寫回 GitHub 的檔案路徑
-const RAW_URL     = "https://raw.githubusercontent.com/Hades1225-design/HadesEidolon/main/public/data.json"; // 首次載入遠端資料來源
+const TARGET_PATH = "public/data.json";                                  // 寫回 GitHub 的檔案路徑
+const LOCAL_URL   = "../../public/data.json";                            // 直接抓本專案 data.json
 
 /* ================== 狀態 ================== */
-let MODE = 'txt';              // 'txt' | 'json'
-let ITEMS = [];                // TXT 模式的純字串陣列
-let RAW_JSON = [];             // JSON 模式的原始物件陣列
-let JSON_KEY = '';             // JSON 模式顯示欄位 key
-let FILTER = '';               // 搜尋過濾字串
+let MODE = 'txt';              
+let ITEMS = [];                
+let RAW_JSON = [];             
+let JSON_KEY = '';             
+let FILTER = '';               
 
 /* ================== DOM ================== */
 const $file   = document.getElementById('file');
@@ -37,16 +37,20 @@ $q.oninput      = () => { FILTER = $q.value.trim().toLowerCase(); render(); };
 /* ================== 啟動 ================== */
 switchMode(MODE);
 render();
-initLoad(false); // 首次載入遠端 data.json（失敗則顯示空白）
+initLoad(false); // 開啟頁面時，直接讀本地 data.json
 
-/* ================== 初始化載入 GitHub 上的資料 ================== */
+/* ================== 初始化載入 ================== */
 async function initLoad(manual=false) {
   try {
-    const res = await fetch(RAW_URL + "?t=" + Date.now(), { cache: "no-store" });
+    const res = await fetch(LOCAL_URL + "?t=" + Date.now(), { cache: "no-store" });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const text = await res.text();
-    const arr = JSON.parse(text);
+    let arr = JSON.parse(text);
     if (!Array.isArray(arr)) throw new Error("檔案格式錯誤：不是陣列");
+
+    if (arr.length && typeof arr[0] === 'string') {
+      arr = arr.map(v => ({ text: String(v) }));
+    }
 
     MODE = 'json';
     $mode.value = 'json';
@@ -57,18 +61,18 @@ async function initLoad(manual=false) {
     updateJsonKeyOptions(Object.keys(arr[0] || { text: '' }));
 
     rebuildFromRaw();
-    $meta.textContent = `已載入遠端資料 · ${new Date().toLocaleTimeString()}`;
+    $meta.textContent = `已載入：${TARGET_PATH} · ${new Date().toLocaleTimeString()}`;
     render();
   } catch (e) {
-    if (manual) alert('讀取遠端失敗：' + e.message);
-    // 失敗就維持空白
+    if (manual) alert('讀取 data.json 失敗：' + e.message);
     RAW_JSON = [];
     if (MODE === 'json') rebuildFromRaw();
+    $meta.textContent = `遠端未載入（顯示空白） · ${new Date().toLocaleTimeString()}`;
     render();
   }
 }
 
-/* ================== 模式切換與資料 ================== */
+/* ================== 模式與資料 ================== */
 function switchMode(m){
   MODE = m;
   if(MODE === 'txt'){
@@ -96,35 +100,6 @@ function updateJsonKeyOptions(keys){
     if(JSON_KEY === k) opt.selected = true;
     $jsonKey.appendChild(opt);
   }
-}
-
-async function handleFile(file){
-  if(!file) return;
-  const text = await file.text();
-  try {
-    if(file.name.endsWith('.json') || isLikelyJSON(text)){
-      const arr = JSON.parse(text);
-      if(!Array.isArray(arr)) throw new Error('JSON 應為陣列');
-      MODE = 'json'; $mode.value = 'json';
-      RAW_JSON = arr;
-      const guess = guessJsonKey(arr);
-      JSON_KEY = guess || 'text';
-      updateJsonKeyOptions(Object.keys(arr[0] || {text:''}));
-      rebuildFromRaw();
-    }else{
-      MODE = 'txt'; $mode.value = 'txt';
-      ITEMS = text.split(/\r?\n/).filter(line => line.length > 0);
-    }
-    $meta.textContent = `已載入：${file.name} · ${new Date().toLocaleTimeString()}`;
-    render();
-  } catch (e) {
-    alert('讀取失敗：' + e.message);
-  }
-}
-
-function isLikelyJSON(s){
-  const t = s.trim();
-  return t.startsWith('[') && t.endsWith(']');
 }
 
 function guessJsonKey(arr){
@@ -221,7 +196,6 @@ async function saveRemote(){
       return;
     }
 
-    // 更新頁面小資訊
     if (out.commit) {
       const now = new Date();
       $meta.textContent = `已儲存：${now.toLocaleString()} · commit ${String(out.commit).slice(0,7)}`;
