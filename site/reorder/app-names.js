@@ -110,19 +110,14 @@ function render(){
       target?.focus();
     };
 
-    // 時間（唯讀 HHmm 或 ─）
-    const time = document.createElement('input');
-    time.className = 'time';
-    time.readOnly = true;
-    time.value = validHHmm(row[1]) ? row[1] : '—';
-
     // 刪除
     const del  = document.createElement('button');
     del.className='del';
     del.textContent='刪除';
     del.onclick = () => { rows.splice(i,1); render(); };
 
-    div.append(idx, name, addBtn, time, del);
+    // 因為隱藏時間，順序改為：編號 → 名字 → 新增 → 刪除
+    div.append(idx, name, addBtn, del);
     $list.appendChild(div);
   });
 }
@@ -147,7 +142,7 @@ async function saveRemote(){
   const payload = {
     path: TARGET_PATH,
     content: JSON.stringify(rows, null, 2),
-    message: "chore: update data.json (names editor with per-row add)"
+    message: "chore: update data.json (names editor hide time)"
   };
   try{
     const res = await fetch(API_URL, {
@@ -163,4 +158,3 @@ async function saveRemote(){
     alert("❌ 儲存失敗：" + e.message);
   }
 }
-
