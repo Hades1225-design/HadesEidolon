@@ -30,11 +30,22 @@
     .toolbar{ display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-top:6px }
     button, .btn{
       padding:8px 10px; border:1px solid var(--border);
-      border-radius:10px; background:#fff; color:#111; text-decoration:none; display:inline-block;
+      border-radius:10px; background:#fff; color:#111; text-decoration:none; display:inline-block; cursor:pointer;
     }
 
-    /* 單列垂直清單（置中） */
-    .list{ display:flex; flex-direction:column; gap:8px; margin-top:12px }
+    /* 預設：單列垂直清單（置中） */
+    .list{
+      display:flex; flex-direction:column; gap:8px; margin-top:12px;
+    }
+
+    /* 匯出模式：每列 30 張卡片 */
+    .export-grid{
+      display:grid !important;
+      grid-template-columns: repeat(30, minmax(0, 1fr));
+      gap:8px;
+      justify-content:center;
+      align-items:start;
+    }
 
     /* 固定卡片大小：寬 216px，高 96px；置中 */
     .card{
@@ -55,16 +66,22 @@
     .chip.red{ background:var(--red) }
     .chip.green{ background:var(--green) }
     .chip.yellow{ background:var(--yellow) }
+
+    /* 匯出時加白底 */
+    .exporting { background:#fff !important; }
   </style>
+  <!-- html2canvas（DOM 轉成圖片） -->
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js" defer></script>
 </head>
 <body>
   <header>
     <div class="container">
-      <h1>天堂 - BOSS時間</h1>
+      <h1>BOSS時間</h1>
       <div class="toolbar">
         <button id="reload">重新讀取</button>
         <a class="btn" href="./name.html">編輯排序</a>
         <a class="btn" href="./time.html">編輯時間</a>
+        <button id="download">下載 PNG</button>
 
         <div class="legend" style="margin-left:8px">
           <span class="chip green">已重生</span>
@@ -88,6 +105,7 @@
   const $list = document.getElementById('list');
   const $meta = document.getElementById('meta');
   document.getElementById('reload').onclick = () => init(true);
+  document.getElementById('download').onclick = downloadPNG;
 
   let items = []; // [ [name, hhmm|null], ... ]
 
@@ -100,11 +118,10 @@
       const arr = JSON.parse(await r.text());
       items = normalize(arr);
 
-      // 以「距離現在的分鐘差（循環 24h）」排序：過去在前、未來在後
+      // 以距離現在分鐘差排序（循環24h）
       items.sort((a,b)=>{
         const da = diffFromNow(a[1]);
         const db = diffFromNow(b[1]);
-        // null 當最舊，永遠放最前
         if(a[1] === null && b[1] === null) return 0;
         if(a[1] === null) return -1;
         if(b[1] === null) return 1;
@@ -142,16 +159,14 @@
     });
   }
 
-  // 回傳「相對現在的排序鍵」：負數=今天已過去；0=現在；正數=未來（今天晚些或明天）
   function diffFromNow(hhmm){
     if(hhmm === null) return -1e9; // null 最前
     const now = nowMinutes();
     const tm  = HHmmToMinutes(hhmm);
-    const raw = tm - now; // 今天維度的差
-    // 00:00–05:59 視為明天清晨（避免把 00:55 當作今天已過去）
+    const raw = tm - now;
     const isEarlyMorning = hhmm <= WRAP_CUTOFF;
     if(raw < 0 && isEarlyMorning){
-      return raw + 1440; // 視為明天 → 轉成正差
+      return raw + 1440;
     }
     return raw;
   }
@@ -159,8 +174,6 @@
   function render(){
     $list.innerHTML = '';
     const nowHHmm = hhmmNow();
-
-    // 找出「未來且距離最短」的索引（以循環 24h 計算）
     const nextIdx = findNextClosestIndex(items, nowHHmm);
 
     items.forEach(([name, t], idx)=>{
@@ -184,13 +197,10 @@
         const isEarlyMorning = t <= WRAP_CUTOFF;
 
         if(raw < 0 && !isEarlyMorning){
-          // 今天的已過去（例如 09:30 在 22:38 時）
           card.classList.add('status-red');
         }else if(idx === nextIdx){
-          // 未來中最近的那張（可能是今天稍晚或明天清晨）
           card.classList.add('status-yellow');
         }
-        // 其餘未來 = 白色（不加 class）
       }
 
       card.append(title, sub);
@@ -213,15 +223,12 @@
   function toDisplay(hhmm){
     return hhmm.slice(0,2) + ':' + hhmm.slice(2,4);
   }
-
-  // 在未來（含明天清晨）裡，找出與現在差距最小的卡片索引
   function findNextClosestIndex(arr, nowHHmm){
     const now = HHmmToMinutes(nowHHmm);
     let bestIdx = -1, bestDelta = Infinity;
     arr.forEach(([_, t], idx)=>{
       if(typeof t === 'string' && /^\d{4}$/.test(t)){
         const tm = HHmmToMinutes(t);
-        // 未來差距（循環 24h）
         const delta = (tm - now + 1440) % 1440;
         if (delta > 0 && delta < bestDelta){
           bestDelta = delta;
@@ -230,6 +237,49 @@
       }
     });
     return bestIdx;
+  }
+
+  async function downloadPNG(){
+    if (!window.html2canvas){
+      alert("圖片匯出工具載入中，請再試一次。");
+      return;
+    }
+    const target = document.getElementById('list');
+    const originalClass = target.className;
+
+    // 切換為 30 欄 Grid 模式
+    target.classList.add('export-grid');
+    document.body.classList.add('exporting');
+
+    // 使用 html2canvas 匯出
+    const canvas = await html2canvas(target, {
+      backgroundColor: '#ffffff',
+      scale: 2,
+      useCORS: true,
+      windowWidth: target.scrollWidth,
+      windowHeight: target.scrollHeight
+    });
+
+    const url = canvas.toDataURL('image/png');
+    triggerDownload(url, `cards_${stamp()}.png`);
+
+    // 還原原本的排版
+    target.className = originalClass;
+    document.body.classList.remove('exporting');
+  }
+
+  function triggerDownload(url, filename){
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  }
+  function stamp(){
+    const d = new Date();
+    const z = n => String(n).padStart(2,'0');
+    return `${d.getFullYear()}${z(d.getMonth()+1)}${z(d.getDate())}_${z(d.getHours())}${z(d.getMinutes())}${z(d.getSeconds())}`;
   }
 
   async function updateMetaTime(){
