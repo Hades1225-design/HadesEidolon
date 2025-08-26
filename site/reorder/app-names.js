@@ -37,15 +37,7 @@ init(false);
 /* ------------------ 載入 ------------------ */
 async function init(manual){
   try{
-    const res = await fetch(DATA_URL + "?t=" + Date.now(), { cache: "no-store" });
-    if(!res.ok) throw new Error(`HTTP ${res.status}（讀取 ${DATA_URL} 失敗）`);
-    const text = await res.text();
-    let arr;
-    try { arr = JSON.parse(text); }
-    catch (e) {
-      console.error("JSON 解析失敗：原始內容：", text);
-      throw new Error("JSON 解析失敗：請檢查 public/data.json 是否為有效 JSON 陣列");
-    }
+    const arr = await fetchDataJSON(); // ← 改這行
     rows = normalize(arr);
     render();
     await updateMetaTime();
@@ -54,7 +46,7 @@ async function init(manual){
     render();
     if(manual) alert("讀取失敗：" + e.message);
     $meta.textContent = `讀取失敗：${e.message}`;
-    console.error("載入錯誤：", e);
+    console.error(e);
   }
 }
 
