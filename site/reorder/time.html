@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>時間編輯器 · data.json（HHmm）</title>
+  <style>
+    :root{ --border:#e5e7eb; --muted:#6b7280 }
+    *{ box-sizing:border-box } 
+    body{ font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "PingFang TC", "Microsoft JhengHei", sans-serif; margin:0; color:#111 }
+    header{ position:sticky; top:0; z-index:10; background:#ffffffcc; backdrop-filter:saturate(140%) blur(6px); border-bottom:1px solid var(--border) }
+    .container{ max-width:1024px; margin:0 auto; padding:14px 16px }
+    h1{ margin:0 0 10px; font-size:20px }
+    .toolbar{ display:flex; gap:8px; flex-wrap:wrap; align-items:center }
+    button, input{ padding:8px 10px; border:1px solid var(--border); border-radius:10px; background:#fff }
+    .muted{ color:var(--muted); font-size:12px }
+    table{ width:100%; border-collapse:collapse; border:1px solid var(--border); margin-top:12px }
+    th, td{ border-bottom:1px solid var(--border); padding:8px; text-align:left }
+    .w-name{ width:40% } .w-time{ width:8ch; text-align:center }
+    td.actions > * { margin-right:6px }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="container">
+      <h1>時間編輯器（24H HHmm） · <code>public/data.json</code></h1>
+      <div class="toolbar">
+        <button id="set-all-now">全部設為現在</button>
+        <button id="clear-all">全部清空時間</button>
+        <button id="sort-asc">時間排序（舊→新）</button>
+        <button id="sort-desc">時間排序（新→舊）</button>
+        <button id="reload">重新讀取</button>
+        <button id="save">儲存到遠端</button>
+        <a href="./index.html" style="margin-left:auto">← 回名字編輯器</a>
+        <span id="meta" class="muted" aria-live="polite"></span>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    <table>
+      <thead>
+        <tr><th style="width:3em">#</th><th>名字（唯讀）</th><th>時間（HHmm）</th><th>操作</th></tr>
+      </thead>
+      <tbody id="tbody"></tbody>
+    </table>
+    <p class="muted">本頁只修改 <b>時間</b>；名字僅顯示，不可編輯。</p>
+  </main>
+
+  <script type="module" src="./app-time.js"></script>
+</body>
+</html>
