@@ -78,7 +78,7 @@ function extractHHmm(t){
   if(/^\d{4}-\d{2}-\d{2}\s\d{4}$/.test(t)) return t.slice(11);
   return null;
 }
-
+ 
 /* ========== 畫面 ========== */
 function render(){
   $list.innerHTML = '';
