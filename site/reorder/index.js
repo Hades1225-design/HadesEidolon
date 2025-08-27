@@ -1,5 +1,8 @@
 // site/index.js
-import { fetchDataJSON, saveDataJSON, currentFileLabel } from './common.js';
+import {
+  fetchDataJSON, saveDataJSON, currentFileLabel,
+  fetchLastCommitTime, urlWithFile, goHomeAfterSave
+} from './common.js';
 
 // 取得 data.json 最後更新時間
 async function fetchLastCommitTime() {
