@@ -31,7 +31,7 @@ async function init(manual){
     items = normalize(arr);
     render();
 
-    // 顯示檔名 + 筆數 + 最後更新
+    // 顯示檔名 + 筆數 + 最後更新時間
     const iso  = await fetchLastCommitTime().catch(()=>null);
     const when = iso ? new Date(iso).toLocaleString() : '未知';
     $meta.textContent = `檔案：${currentFileLabel()} · 共 ${items.length} 筆 · 最後更新：${when}`;
@@ -81,7 +81,7 @@ function render(){
     idx.className = 'idx';
     idx.textContent = String(i+1);
 
-    // 名字輸入
+    // 名字輸入框
     const input = document.createElement('input');
     input.className = 'name-input';
     input.type = 'text';
@@ -91,14 +91,14 @@ function render(){
       items[i][0] = e.target.value;
     });
 
-    // 新增（在此列下方插入一筆；時間沿用本列時間）
+    // 新增（複製目前時間）
     const btnAdd = document.createElement('button');
     btnAdd.textContent = '新增';
     btnAdd.className = 'btn-add';
     btnAdd.addEventListener('click', ()=>{
-      items.splice(i+1, 0, ['', t ?? null]);
+      items.splice(i+1, 0, ['', items[i][1] ?? null]);
       render();
-      // 聚焦新列
+      // 聚焦到新列
       const el = $list.querySelector(`.row:nth-child(${i+2}) .name-input`);
       el?.focus();
     });
@@ -120,7 +120,7 @@ function render(){
   bindDragSort();
 }
 
-/* ---------------- 拖曳排序（以滑鼠 Y 位置決定插入點） ---------------- */
+/* ---------------- 拖曳排序 ---------------- */
 function bindDragSort(){
   let draggingEl = null;
   let fromIndex = -1;
@@ -147,7 +147,7 @@ function bindDragSort(){
       if(!draggingEl || over === draggingEl) return;
       const rect = over.getBoundingClientRect();
       const before = (e.clientY - rect.top) < rect.height / 2;
-      // 視覺上先移動
+      // 預覽插入位置
       if(before) {
         $list.insertBefore(draggingEl, over);
       } else {
@@ -168,12 +168,15 @@ function bindDragSort(){
   });
 }
 
-/* ---------------- 儲存 ---------------- */
+/* ---------------- 儲存（只更新名字與排序，不動時間） ---------------- */
 async function onSave(){
   try{
-    await saveDataJSON(items, "update names");
+    // 儲存時保留原本時間
+    const dataToSave = items.map(([name, time]) => [name, time]);
+    await saveDataJSON(dataToSave, "update names");
+
     // 儲存成功後回首頁（保留 ?file）
-    goHomeAfterSave('./index.html');
+    goHomeAfterSave('../../index.html');
   }catch(e){
     alert(`儲存失敗：${e.message}`);
     console.error(e);
