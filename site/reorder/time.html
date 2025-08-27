@@ -6,24 +6,51 @@
   <title>天堂 - BOSS時間 - 編輯時間</title>
   <style>
     :root{ --border:#e5e7eb; --muted:#6b7280 }
-    *{ box-sizing:border-box } 
-    body{ font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "PingFang TC", "Microsoft JhengHei", sans-serif; margin:0; color:#111 }
-    header{ position:sticky; top:0; z-index:10; background:#ffffffcc; backdrop-filter:saturate(140%) blur(6px); border-bottom:1px solid var(--border) }
-    .container{ max-width:1024px; margin:0 auto; padding:14px 16px }
+    *{ box-sizing:border-box }
+    body{
+      font-family: system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,"PingFang TC","Microsoft JhengHei",sans-serif;
+      margin:0; color:#111;
+    }
+    header{
+      position:sticky; top:0; z-index:10;
+      background:#ffffffcc; backdrop-filter:saturate(140%) blur(6px);
+      border-bottom:1px solid var(--border);
+    }
+    .container{ max-width:960px; margin:0 auto; padding:14px 16px }
     h1{ margin:0 0 10px; font-size:20px }
     .toolbar{ display:flex; gap:8px; flex-wrap:wrap; align-items:center }
-    button, input{ padding:8px 10px; border:1px solid var(--border); border-radius:10px; background:#fff }
+    button, input{
+      padding:8px 10px; border:1px solid var(--border); border-radius:10px; background:#fff;
+    }
     .muted{ color:var(--muted); font-size:12px }
-    table{ width:100%; border-collapse:collapse; border:1px solid var(--border); margin-top:12px }
-    th, td{ border-bottom:1px solid var(--border); padding:8px; text-align:left }
-    .w-name{ width:40% } .w-time{ width:8ch; text-align:center }
-    td.actions > * { margin-right:6px }
+
+    /* 與 name.html 相同的清單樣式 */
+    .list{ border:1px solid var(--border); border-radius:12px; overflow:hidden }
+    .row{
+      display:grid;
+      grid-template-columns: 3em 1fr 8ch; /* idx / name / time */
+      gap:10px; align-items:center;
+      padding:10px 12px; border-bottom:1px solid var(--border);
+    }
+    .row:last-child{ border-bottom:none }
+    .idx{ text-align:right; color:#666 }
+    .name-cell{
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      font-weight:600;
+    }
+    .time-input{
+      width:8ch;
+      text-align:center;
+      font-variant-numeric:tabular-nums;
+    }
   </style>
 </head>
 <body>
   <header>
     <div class="container">
-      <h1>編輯時間</code></h1>
+      <h1>編輯時間</h1>
       <div class="toolbar">
         <button id="reload">重新讀取</button>
         <button id="save">儲存到伺服器</button>
@@ -34,15 +61,14 @@
   </header>
 
   <main class="container">
-    <p class="muted">輸入 4 位數字後或者按ENTER會自動跳下一欄繼續輸入（例如 <code>2231</code>）。</p>
-    <table>
-      <thead>
-        <tr><th style="width:3em">#</th><th>BOSS名稱</th><th>時間（HHmm）</th></tr>
-      </thead>
-      <tbody id="tbody"></tbody>
-    </table>
+    <p class="muted" style="margin-top:8px">
+      請輸入 4 位數時間（HHmm），可按 Enter 直接跳到下一筆（例如 2231）。
+    </p>
+
+    <div id="list" class="list" aria-live="polite"></div>
   </main>
 
+  <!-- 綁定 JS -->
   <script type="module" src="./app-time.js"></script>
 </body>
 </html>
