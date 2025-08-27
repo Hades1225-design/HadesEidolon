@@ -35,15 +35,17 @@ button, input, a.btn{
 }
 .muted{ color:var(--muted); font-size:12px; }
 
-/* List / Row（共用三欄版型：編號 / 名字 / 時間） */
+/* 清單容器 */
 .list{
   border:1px solid var(--border);
   border-radius:12px;
   overflow:hidden;
+  background:#fff;
 }
+
+/* 基礎列樣式 */
 .row{
   display:grid;
-  grid-template-columns: 3em 1fr 8ch;  /* idx / name / time */
   gap:10px;
   align-items:center;
   padding:10px 12px;
@@ -54,7 +56,7 @@ button, input, a.btn{
 
 .idx{ text-align:right; color:#666; }
 
-/* 名字欄：可當文字或輸入框使用 */
+/* 名字欄位：可文字或輸入 */
 .name-cell{
   white-space:nowrap;
   overflow:hidden;
@@ -69,17 +71,43 @@ button, input, a.btn{
   background:#fff;
 }
 
-/* 時間欄（time.html 可輸入；name.html 可隱藏或唯讀） */
+/* 時間輸入 */
 .time-input{
   width:8ch;
   text-align:center;
   font-variant-numeric:tabular-nums;
 }
 
-/* 拖曳佔位（若名字編輯器有拖曳排序） */
+/* 動作按鈕區（名字編輯器專用） */
+.actions{
+  display:flex;
+  gap:6px;
+  justify-content:flex-end;
+}
+.actions button{
+  padding:6px 10px;
+  border-radius:8px;
+}
+
+/* 拖曳佔位 */
 .ghost{
   height:48px;
   border:1px dashed #bbb;
   background:#f9fafb;
   grid-column:1/-1;
 }
+
+/* ========== 版型切換：依頁面類型調整欄位 ========== */
+/* 名字編輯器：編號 / 名字輸入 / 動作按鈕（隱藏時間） */
+body.page-name .row{
+  grid-template-columns: 3em 1fr 12em;
+}
+body.page-name .actions{ display:flex; }
+body.page-name .time-input{ display:none; }
+
+/* 時間編輯器：編號 / 名字(純文字) / 時間輸入（隱藏動作） */
+body.page-time .row{
+  grid-template-columns: 3em 1fr 8ch;
+}
+body.page-time .actions{ display:none; }
+body.page-time .time-input{ display:inline-block; }
