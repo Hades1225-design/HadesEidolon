@@ -113,17 +113,16 @@ async function onSave(){
     });
     await saveDataJSON(out, "update times");
     alert('儲存成功！'); location.href = "./index.html";
+
+    const qs = new URLSearchParams(location.search);
+    const file = qs.get('file');
+    const url = new URL("../../index.html", location.href);
+    if (file) url.searchParams.set('file', file);
+    location.href = url.toString();
   }catch(e){
     alert(`儲存失敗：${e.message}`);
   }
 }
-async function saveData() {
-  await saveToServer();
-  goHome();
-}
-
-document.getElementById("save").addEventListener("click", saveData);
-document.addEventListener("DOMContentLoaded", setupSharedLinks);
 
 /* -12h 規則：最近一次發生的日期 */
 function resolveNextDate(hhmm){
