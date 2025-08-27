@@ -1,45 +1,42 @@
-/* === GitHub 讀檔設定（Contents API 直讀） === */
-const GH_OWNER  = "Hades1225-design";
-const GH_REPO   = "HadesEidolon";
-const GH_BRANCH = "main";
+// site/index.js
+// 依賴：common.js、html2canvas（在 index.html 以 <script> 引入）
 
-const GITHUB_CONTENTS =
-  `https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/contents/public/data.json?ref=${GH_BRANCH}`;
-const GITHUB_COMMITS =
-  `https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/commits?path=public/data.json&page=1&per_page=1`;
+import { fetchDataJSON, fetchLastCommitTime, currentFileLabel } from './site/reorder/common.js';
 
-/* === DOM === */
-const $list = document.getElementById('list');
-const $meta = document.getElementById('meta');
-document.getElementById('reload').onclick = () => init(true);
-document.getElementById('download-cards').onclick = downloadPNG;
+/* ========== DOM 取得 ========== */
+const $list  = document.getElementById('list');
+const $meta  = document.getElementById('meta');
+const $reload = document.getElementById('reload');
+const $btnDownload = document.getElementById('download-cards');
+const $linkName = document.getElementById('link-name');
+const $linkTime = document.getElementById('link-time');
 
-let items = []; // [ [name, time], ... ] time: null | "HHmm" | "YYYY-MM-DD HHmm"
+/* ========== 常數 ========== */
+const WRAP_CUTOFF = "0559";        // 00:00–05:59 視為隔日清晨（排序時往明天包）
+const CARD_W = 185;                // 匯出版卡片寬（需和 CSS 相同）
+const CARD_H = 35;                 // 匯出版卡片高（需和 CSS 相同）
+const GAP    = 8;                  // 匯出版卡片間距（與 .list gap 近似）
+const PER_COL = 20;                // 每欄 20 張（由上至下、再往右）
 
+/* ========== 狀態 ========== */
+let items = []; // [[name, time], ...]  time: null | "HHmm" | "YYYY-MM-DD HHmm"
+
+/* ========== 初始化 ========== */
 init(false);
-
-/* ================= 讀取與初始化 ================= */
-async function fetchDataJSON(){
-  const url = `${GITHUB_CONTENTS}&ts=${Date.now()}`; // 防快取
-  const res = await fetch(url, {
-    headers: { "Accept": "application/vnd.github.v3.raw" },
-    cache: "no-store"
-  });
-  if(!res.ok) throw new Error(`HTTP ${res.status}（讀取 data.json 失敗）`);
-  const text = await res.text();
-  try { return JSON.parse(text); }
-  catch(e){ console.error("data.json 內容：", text); throw new Error("JSON 解析失敗"); }
-}
+$reload?.addEventListener('click', () => init(true));
+$btnDownload?.addEventListener('click', onDownloadCards);
+wireEditorLinks(); // 工具列超連結帶上 file 參數
 
 async function init(manual){
   try{
     const arr = await fetchDataJSON();
     items = normalize(arr);
 
-    // 依「離現在的分鐘差」排序（null 最前，之後由近到遠）
+    // 以「距離現在的分鐘差（循環 24h）」排序：
+    // null（已重生）最前 → 其他依 diffFromNow 由小到大
     items.sort((a,b)=>{
-      const da = diffFromNowAbs(a[1]);
-      const db = diffFromNowAbs(b[1]);
+      const da = diffFromNow(a[1]);
+      const db = diffFromNow(b[1]);
       if(a[1] === null && b[1] === null) return 0;
       if(a[1] === null) return -1;
       if(b[1] === null) return 1;
@@ -47,23 +44,27 @@ async function init(manual){
     });
 
     render();
-    await updateMetaTime();
+
+    // 顯示檔名與最後更新時間
+    const iso = await fetchLastCommitTime().catch(()=>null);
+    const when = iso ? new Date(iso).toLocaleString() : '未知';
+    $meta.textContent = `檔案：${currentFileLabel()}　最後更新：${when}`;
   }catch(e){
     items = [];
     render();
-    if(manual) alert("讀取失敗：" + e.message);
     $meta.textContent = `讀取失敗：${e.message}`;
+    if(manual) alert(`讀取失敗：${e.message}`);
     console.error(e);
   }
 }
 
+/* ========== 共用工具 ========== */
 function normalize(arr){
   if(!Array.isArray(arr)) return [];
   return arr.map(item=>{
     if(Array.isArray(item)){
       const name = String(item[0] ?? '');
-      const t = item[1];
-      return [name, unifyTime(t)];
+      return [name, unifyTime(item[1])];
     }
     if(typeof item === 'string') return [item, null];
     if(item && typeof item === 'object'){
@@ -83,171 +84,162 @@ function unifyTime(t){
   return null;
 }
 
-/* ================= 時間工具（含 -12 小時規則） ================= */
-// 將 "YYYY-MM-DD HHmm" 轉為 epoch 分鐘（本地時區）
-function absToMinutes(isoHM){ // e.g. "2025-08-28 0055"
-  const [d, hm] = isoHM.split(' ');
-  const [y,m,day] = d.split('-').map(n=>+n);
-  const h = +hm.slice(0,2), mi = +hm.slice(2,4);
-  const dt = new Date(y, m-1, day, h, mi, 0, 0);
-  return Math.floor(dt.getTime()/60000);
+// 現在 HHmm / 分鐘
+function hhmmNow(){
+  const d = new Date();
+  return String(d.getHours()).padStart(2,'0') + String(d.getMinutes()).padStart(2,'0');
 }
-// 只給 HHmm → 依規則決定今天/明天，回傳 "YYYY-MM-DD"
-function resolveNextDate(hhmm){
-  const now = new Date();
+function nowMinutes(){
+  const d = new Date();
+  return d.getHours()*60 + d.getMinutes();
+}
+function HHmmToMinutes(hhmm){
   const h = +hhmm.slice(0,2), m = +hhmm.slice(2,4);
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate(), h, m, 0, 0);
-
-  const nowMin = Math.floor(now.getTime()/60000);
-  const tgtMin = Math.floor(today.getTime()/60000);
-  const diff   = tgtMin - nowMin;
-
-  // 規則：
-  // 1) 未來 → 今天
-  // 2) 已過去但 |diff| <= 12 小時（720 分）→ 今天
-  // 3) 已過去且 |diff| > 12 小時 → 明天
-  if (diff >= 0 || Math.abs(diff) <= 720) {
-    return toYMD(today);
-  } else {
-    const tomorrow = new Date(today.getTime() + 86400000);
-    return toYMD(tomorrow);
-  }
+  return h*60 + m;
 }
-function toYMD(d){
-  const z = n => String(n).padStart(2,'0');
-  return `${d.getFullYear()}-${z(d.getMonth()+1)}-${z(d.getDate())}`;
-}
+function toDisplay(hhmm){ return hhmm.slice(0,2) + ':' + hhmm.slice(2,4); }
 
-// 取得「離現在的分鐘差」：null 最前；絕對時間直接比；HHmm 會先套日期
-function diffFromNowAbs(t){
-  if(t === null) return -1e9; // null 最前
-  const nowM = Math.floor(Date.now()/60000);
-  if(/^\d{4}-\d{2}-\d{2}\s\d{4}$/.test(t)){
-    return absToMinutes(t) - nowM;
+// 排序用：回傳相對現在的分鐘差（循環 24h）；null 放到最前
+function diffFromNow(time){
+  if(time === null) return -1e9;
+
+  // 支援 "YYYY-MM-DD HHmm"
+  let hhmm = time;
+  if(/^\d{4}-\d{2}-\d{2}\s\d{4}$/.test(time)) hhmm = time.slice(11);
+
+  const now = nowMinutes();
+  const tm  = HHmmToMinutes(hhmm);
+  const raw = tm - now;
+  const isEarlyMorning = hhmm <= WRAP_CUTOFF;
+  if(raw < 0 && isEarlyMorning){
+    // 清晨（<= 05:59），若已過去，視為明天清晨
+    return raw + 1440;
   }
-  if(/^\d{4}$/.test(t)){
-    const date = resolveNextDate(t);
-    return absToMinutes(`${date} ${t}`) - nowM;
-  }
-  return 1e9;
+  return raw;
 }
 
-// 找出「下一個即將到來」的索引（>=0 最小差值）
+// 找出「未來中最接近現在」的 index（用於標記黃色）
 function findNextClosestIndex(arr){
-  const nowM = Math.floor(Date.now()/60000);
+  const now = nowMinutes();
   let bestIdx = -1, bestDelta = Infinity;
-  arr.forEach(([_, t], idx)=>{
-    if(!t) return;
-    let tgtM = null;
-    if(/^\d{4}-\d{2}-\d{2}\s\d{4}$/.test(t)) tgtM = absToMinutes(t);
-    else if(/^\d{4}$/.test(t)) tgtM = absToMinutes(`${resolveNextDate(t)} ${t}`);
-    if(tgtM !== null){
-      const delta = tgtM - nowM;
-      if(delta >= 0 && delta < bestDelta){
-        bestDelta = delta; bestIdx = idx;
-      }
+
+  arr.forEach(([_, time], idx)=>{
+    if(time === null) return;
+    let hhmm = time;
+    if(/^\d{4}-\d{2}-\d{2}\s\d{4}$/.test(time)) hhmm = time.slice(11);
+    if(!/^\d{4}$/.test(hhmm)) return;
+
+    const tm = HHmmToMinutes(hhmm);
+    const delta = (tm - now + 1440) % 1440; // 0..1439
+    if(delta > 0 && delta < bestDelta){
+      bestDelta = delta;
+      bestIdx = idx;
     }
   });
   return bestIdx;
 }
 
-/* ================= 畫面渲染 ================= */
+/* ========== 畫面渲染 ========== */
 function render(){
   $list.innerHTML = '';
+  const nowHHmm = hhmmNow();
   const nextIdx = findNextClosestIndex(items);
-  const nowM = Math.floor(Date.now()/60000);
 
-  items.forEach(([name, t], idx)=>{
+  items.forEach(([name, time], idx)=>{
     const card = document.createElement('div');
     card.className = 'card';
 
-    const title = document.createElement('div');
-    title.className = 'name';
-    title.textContent = name || '—';
+    const elName = document.createElement('div');
+    elName.className = 'name';
+    elName.textContent = name || '—';
 
-    const timeEl = document.createElement('div');
-    timeEl.className = 'time';
+    const elTime = document.createElement('div');
+    elTime.className = 'time';
 
-    if(t === null){
-      timeEl.textContent = '存活';
+    if(time === null){
+      elTime.textContent = '已重生';
       card.classList.add('status-green');
     }else{
-      // 不論是否包含日期，統一只顯示 HH:mm
-      const hhmm = /^\d{4}-\d{2}-\d{2}\s\d{4}$/.test(t) ? t.slice(11,15) : t;
-      timeEl.textContent = `${hhmm.slice(0,2)}:${hhmm.slice(2,4)}`;
+      let hhmm = time;
+      if(/^\d{4}-\d{2}-\d{2}\s\d{4}$/.test(time)) hhmm = time.slice(11);
+      elTime.textContent = toDisplay(hhmm);
 
-      // 顏色：過去=紅；其餘正常；「未來最近」=黃
-      let tgtM = null;
-      if(/^\d{4}-\d{2}-\d{2}\s\d{4}$/.test(t)) tgtM = absToMinutes(t);
-      else if(/^\d{4}$/.test(t)) tgtM = absToMinutes(`${resolveNextDate(t)} ${t}`);
-
-      if(tgtM !== null){
-        if(tgtM < nowM){
-          card.classList.add('status-red');
-        }else if(idx === nextIdx){
-          card.classList.add('status-yellow');
-        }
+      const raw = HHmmToMinutes(hhmm) - nowMinutes();
+      const isEarlyMorning = hhmm <= WRAP_CUTOFF;
+      if(raw < 0 && !isEarlyMorning){
+        card.classList.add('status-red');       // 今天已過去
+      }else if(idx === nextIdx){
+        card.classList.add('status-yellow');    // 未來中最近
       }
     }
 
-    card.append(title, timeEl);
+    card.append(elName, elTime);
     $list.appendChild(card);
   });
 }
 
-/* ================= 匯出 PNG（直向排序、每欄 20 張） ================= */
-async function downloadPNG(){
-  if (!window.html2canvas) { alert("圖片匯出工具載入中，請再試一次。"); return; }
+/* ========== 匯出 PNG（卡片，直向 20/欄，超過往右） ========== */
+async function onDownloadCards(){
+  if(!window.html2canvas){
+    alert('圖片匯出工具尚未載入，請稍後再試。');
+    return;
+  }
 
-  const cards = Array.from(document.querySelectorAll('#list .card'));
-  if (!cards.length) return;
+  // 1) 先就地抓現有卡片
+  const cards = Array.from($list.querySelectorAll('.card'));
+  if(!cards.length){
+    alert('沒有可匯出的卡片。');
+    return;
+  }
 
-  // 與 CSS 尺寸一致（你現在 index.html 卡片 185×35、gap 8）
-  const CARD_W = 185;
-  const CARD_H = 35;
-  const GAP    = 8;
-  const perCol = 20; // 每欄固定 20 張
-  const totalCols = Math.ceil(cards.length / perCol);
-
-  // 建立螢幕外容器
+  // 2) 建立螢幕外容器（純匯出排版，不動原 DOM）
   const wrap = document.createElement('div');
   wrap.className = 'export-grid-dynamic';
-  wrap.style.gridTemplateColumns = `repeat(${totalCols}, ${CARD_W}px)`;
-  wrap.style.gridAutoRows = `${CARD_H}px`;
-  wrap.style.gap = `${GAP}px`;
+  Object.assign(wrap.style, {
+    position: 'fixed',
+    left: '-200vw', top: '0',
+    background: '#fff',
+    display: 'grid',
+    gap: `${GAP}px`,
+    gridAutoRows: `${CARD_H}px`,
+    gridTemplateColumns: `repeat(${Math.ceil(cards.length / PER_COL)}, ${CARD_W}px)`
+  });
   document.body.appendChild(wrap);
+  document.body.classList.add('exporting'); // 全頁白底
 
-  // 依「直向優先」放入 clone
-  cards.forEach((card, i) => {
+  // 3) 依「直向優先」的順序 clone 卡片進匯出容器
+  //    第 0 欄：row 1..20；第 1 欄：row 1..20；以此類推
+  cards.forEach((card, i)=>{
     const clone = card.cloneNode(true);
-    const col = Math.floor(i / perCol);
-    const row = (i % perCol) + 1; // grid-row 從 1 起算
-    clone.style.gridColumn = String(col + 1);
-    clone.style.gridRow = String(row);
+    const col = Math.floor(i / PER_COL) + 1;  // grid-column 從 1 開始
+    const row = (i % PER_COL) + 1;            // grid-row    從 1 開始
     clone.style.margin = '0';
-    clone.style.width  = `${CARD_W}px`;
+    clone.style.width = `${CARD_W}px`;
     clone.style.height = `${CARD_H}px`;
+    clone.style.gridColumn = String(col);
+    clone.style.gridRow = String(row);
     wrap.appendChild(clone);
   });
 
-  document.body.classList.add('exporting');
-  if (document.fonts?.ready) { try { await document.fonts.ready; } catch {} }
+  // 4) 等字型穩定再截圖
+  if(document.fonts?.ready){ try{ await document.fonts.ready; }catch{} }
 
   const canvas = await html2canvas(wrap, {
-    backgroundColor: '#ffffff',
+    backgroundColor:'#ffffff',
     scale: 2,
     useCORS: true,
     windowWidth: wrap.scrollWidth,
     windowHeight: wrap.scrollHeight
   });
 
-  triggerDownload(canvas.toDataURL('image/png'), `cards_${stamp()}.png`);
+  const url = canvas.toDataURL('image/png');
+  triggerDownload(url, `cards_${stamp()}.png`);
 
+  // 5) 清理
   document.body.removeChild(wrap);
   document.body.classList.remove('exporting');
 }
 
-/* ================= 其他工具 ================= */
 function triggerDownload(url, filename){
   const a = document.createElement('a');
   a.href = url; a.download = filename;
@@ -258,19 +250,12 @@ function stamp(){
   return `${d.getFullYear()}${z(d.getMonth()+1)}${z(d.getDate())}_${z(d.getHours())}${z(d.getMinutes())}${z(d.getSeconds())}`;
 }
 
-async function updateMetaTime(){
-  try{
-    const r = await fetch(GITHUB_COMMITS, { cache:"no-store" });
-    if(!r.ok) throw new Error(`HTTP ${r.status}（讀取 GitHub commit 失敗）`);
-    const commits = await r.json();
-    if(Array.isArray(commits) && commits.length){
-      const iso = commits[0].commit.committer.date;
-      $meta.textContent = `最後更新：${new Date(iso).toLocaleString()}`;
-    }else{
-      $meta.textContent = `最後更新時間未知`;
-    }
-  }catch(e){
-    $meta.textContent = `最後更新時間讀取失敗`;
-    console.error(e);
-  }
+/* ========== 工具列：連結保留 ?file= 參數 ========== */
+function wireEditorLinks(){
+  const qs = new URLSearchParams(location.search);
+  const file = qs.get('file');
+  const addParam = file ? `?file=${encodeURIComponent(file)}` : '';
+
+  if($linkName) $linkName.href = `./site/reorder/name.html${addParam}`;
+  if($linkTime) $linkTime.href = `./site/reorder/time.html${addParam}`;
 }
