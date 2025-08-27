@@ -84,18 +84,18 @@ function render(){
 
 async function onSave(){
   try{
-    await saveDataJSON(items, "update names");
+    await saveDataJSON(items, "update times");
     alert('儲存成功！');
+    
+    // 回首頁並保留 file 參數
+    const qs = new URLSearchParams(location.search);
+    const file = qs.get('file');
+    const url = new URL("../../index.html", location.href);
+    if (file) url.searchParams.set('file', file);
+    location.href = url.toString();
+
   }catch(e){
     alert(`儲存失敗：${e.message}`);
   }
-
-async function saveData() {
-  await saveToServer();
-  goHome();
 }
 
-document.getElementById("save").addEventListener("click", saveData);
-document.addEventListener("DOMContentLoaded", setupSharedLinks);
-
-}
