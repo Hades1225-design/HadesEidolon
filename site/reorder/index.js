@@ -152,50 +152,36 @@ function findNextClosestIndex(arr, nowHHmm){
   return bestIdx;
 }
 
-/* ========= 匯出 PNG（卡片） ========= */
+/* ========= 匯出 PNG（卡片：單欄直向顯示） ========= */
 async function downloadPNG(){
   if (!window.html2canvas) {
     alert("圖片匯出工具載入中，請再試一次。");
     return;
   }
+
   const target = document.getElementById('list');
   const originalClass = target.className;
 
-  target.classList.add('export-grid');
+  // 匯出時：單欄直向
+  target.classList.add('export-vertical');
   document.body.classList.add('exporting');
 
-  if (document.fonts?.ready) { try { await document.fonts.ready; } catch {} }
-
-  const cards = Array.from(target.querySelectorAll('.card'));
-  const total = cards.length;
-  const pageSize = 100;
-  const pageCount = Math.ceil(total / pageSize);
-
-  const sorted = [];
-  for (let col = 0; col < 5; col++) {
-    for (let row = 0; row < 20; row++) {
-      const idx = row + col * 5;
-      if (idx < total) sorted.push(cards[idx]);
-    }
+  // 等字型載入，避免匯出時字跑位
+  if (document.fonts?.ready) { 
+    try { await document.fonts.ready; } catch {} 
   }
 
-  for (let i = 0; i < pageCount; i++) {
-    sorted.forEach((c, idx) => {
-      c.style.display = (idx >= i * pageSize && idx < (i + 1) * pageSize) ? '' : 'none';
-    });
+  const canvas = await html2canvas(target, {
+    backgroundColor: '#ffffff',
+    scale: 2,
+    useCORS: true,
+    windowWidth: target.scrollWidth,
+    windowHeight: target.scrollHeight
+  });
 
-    const canvas = await html2canvas(target, {
-      backgroundColor: '#ffffff',
-      scale: 2,
-      useCORS: true,
-      windowWidth: target.scrollWidth,
-      windowHeight: target.scrollHeight
-    });
+  triggerDownload(canvas.toDataURL('image/png'), `cards_vertical_${stamp()}.png`);
 
-    triggerDownload(canvas.toDataURL('image/png'), `cards_page${i + 1}_${stamp()}.png`);
-  }
-
-  cards.forEach(c => c.style.display = '');
+  // 還原樣式
   target.className = originalClass;
   document.body.classList.remove('exporting');
 }
