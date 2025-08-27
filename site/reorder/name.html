@@ -3,33 +3,16 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>天堂 - BOSS時間 - 編輯排序</title>
-  <style>
-    :root{ --border:#e5e7eb; --muted:#6b7280 }
-    *{ box-sizing:border-box } body{ font-family: system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,"PingFang TC","Microsoft JhengHei",sans-serif; margin:0; color:#111 }
-    header{ position:sticky; top:0; z-index:10; background:#ffffffcc; backdrop-filter:saturate(140%) blur(6px); border-bottom:1px solid var(--border) }
-    .container{ max-width:960px; margin:0 auto; padding:14px 16px }
-    h1{ margin:0 0 10px; font-size:20px }
-    .toolbar{ display:flex; gap:8px; flex-wrap:wrap; align-items:center }
-    button, input{ padding:8px 10px; border:1px solid var(--border); border-radius:10px; background:#fff }
-    .muted{ color:var(--muted); font-size:12px }
-    .list{ border:1px solid var(--border); border-radius:12px; overflow:hidden }
-    /* 隱藏時間欄後，改為四欄：編號、名字、新增、刪除 */
-    .row{ display:grid; grid-template-columns: 3em 1fr auto auto; gap:10px; align-items:center; padding:10px 12px; border-bottom:1px solid var(--border) }
-    .row:last-child{ border-bottom:none }
-    .idx{ text-align:right; color:#666 }
-    .name{ width:100%; min-width:220px }
-    .ghost{ height:48px; border:1px dashed #bbb; background:#f9fafb; grid-column:1/-1 }
-    .del{ color:#b91c1c; border-color:#f3c0c0 }
-  </style>
+  <title>天堂 - BOSS時間 - 編輯排序（名字）</title>
+  <link rel="stylesheet" href="./editor.css" />
 </head>
 <body>
   <header>
     <div class="container">
-      <h1>編輯排序</h1>
+      <h1>編輯排序（名字）</h1>
       <div class="toolbar">
         <button id="reload">重新讀取</button>
-        <button id="save">儲存到伺服器</button>  
+        <button id="save">儲存到伺服器</button>
         <a class="btn" href="./index.html" style="margin-left:auto">回首頁</a>
         <span id="meta" class="muted" aria-live="polite"></span>
       </div>
@@ -37,10 +20,19 @@
   </header>
 
   <main class="container">
-    <p class="muted" style="margin-top:8px">BOSS名稱新增、刪除、拉動名稱可以移動排序</p>
-    <div id="list" class="list" aria-live="polite"></div>    
+    <p class="muted" style="margin-top:8px">
+      可拖曳排序；點選名字可直接編輯。時間欄已隱藏。
+    </p>
+    <div id="list" class="list" aria-live="polite"></div>
   </main>
 
+  <!-- 你的名字編輯器邏輯（保留原本功能） -->
   <script type="module" src="./app-names.js"></script>
+
+  <style>
+    /* 讓名字編輯器只顯示兩欄（編號 / 名字），隱藏時間欄 */
+    .row{ grid-template-columns: 3em 1fr 0; }
+    .row > :last-child{ display:none; }
+  </style>
 </body>
 </html>
