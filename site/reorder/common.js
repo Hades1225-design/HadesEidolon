@@ -1,135 +1,128 @@
-// site/reorder/common.js
-// === GitHub 讀檔設定 ===
-export const GH_OWNER  = "Hades1225-design";
-export const GH_REPO   = "HadesEidolon";
-export const GH_BRANCH = "main";
+// ===== site/reorder/common.js =====
+// 共用：讀寫 GitHub JSON（支援多檔）、保留 ?file 參數、回首頁工具。
+// 以 ES Module 匯出，請用 <script type="module"> 載入使用。
 
-// 你的寫入 API（Cloudflare Worker /save）
-export const WORKER_ENDPOINT = "https://hadeseidolon-json-saver.b5cp686csv.workers.dev/api/save"; // ←換成實際 URL
+/* ----------------- 可調整區 ----------------- */
+// 你的 Cloudflare Worker「儲存 API」端點（POST）
+export const WORKER_ENDPOINT =
+  "https://hadeseidolon-json-saver.b5cp686csv.workers.dev/api/save";
 
-// DEMO：網址帶 ?demo=1 時，不寫遠端
-export const DEMO_MODE = (() => {
-  try{ return new URL(location.href).searchParams.has('demo'); }catch{ return false; }
-})();
+// GitHub 讀檔（用 Contents API 直接取 raw）
+const GH_OWNER  = "Hades1225-design";
+const GH_REPO   = "HadesEidolon";
+const GH_BRANCH = "main";
 
-// === 共用工具 ===
+/* ------------------------------------------- */
 
-// 取得當前網址的 file 參數
-function getCurrentFile() {
+/** 讀目前網址上的 ?file 參數（回傳檔名，預設 public/data.json） */
+export function getFileParam() {
   const qs = new URLSearchParams(location.search);
-  return qs.get("file") || "data.json"; // 預設 data.json
-}
-
-// 產生首頁網址（保留 file）
-function getIndexURL() {
-  const url = new URL("../../index.html", location.href);
-  const file = getCurrentFile();
-  if (file) url.searchParams.set("file", file);
-  return url.toString();
-}
-
-// 產生名字編輯器網址（保留 file）
-function getNameEditorURL() {
-  const url = new URL("./name.html", location.href);
-  const file = getCurrentFile();
-  if (file) url.searchParams.set("file", file);
-  return url.toString();
-}
-
-// 產生時間編輯器網址（保留 file）
-function getTimeEditorURL() {
-  const url = new URL("./time.html", location.href);
-  const file = getCurrentFile();
-  if (file) url.searchParams.set("file", file);
-  return url.toString();
-}
-
-// 導回首頁（保留 file）
-function goHome() {
-  location.href = getIndexURL();
-}
-
-// 初始化首頁 / 編輯器的連結
-function setupSharedLinks() {
-  const $home = document.getElementById("home-link");
-  if ($home) $home.href = getIndexURL();
-
-  const $name = document.getElementById("link-name");
-  if ($name) $name.href = getNameEditorURL();
-
-  const $time = document.getElementById("link-time");
-  if ($time) $time.href = getTimeEditorURL();
-}
-
-/* ---------- 目標檔案解析 ----------
- * 優先：URL ?file=xxx.json > window.DATA_FILE > public/data.json
- * 只允許 public/ 之下 .json，限制字元避免跳脫
- -----------------------------------*/
-const SAFE_NAME_RE = /^[A-Za-z0-9._\-\/]+$/;
-export function resolveDataPath(){
-  let file = "public/data.json";
-  try{
-    const u = new URL(location.href);
-    const q = u.searchParams.get('file');
-    if(q) file = q;
-    else if(typeof window !== 'undefined' && typeof window.DATA_FILE === 'string'){
-      file = window.DATA_FILE;
-    }
-  }catch{}
-  file = String(file || '').trim();
-  if(!file.startsWith('public/')) file = 'public/' + file.replace(/^\/+/, '');
-  if(!file.endsWith('.json')) file = file + '.json';
-  if(!SAFE_NAME_RE.test(file)) throw new Error('檔名含非法字元');
-  return file;
-}
-export function currentFileLabel(){
-  try{ return resolveDataPath().replace(/^public\//,''); }
-  catch{ return 'data.json'; }
-}
-
-/* ---------- 讀取（GitHub Contents API） ---------- */
-export async function fetchDataJSON(){
-  const path = resolveDataPath();
-  const url  = `https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/contents/${encodeURIComponent(path)}?ref=${GH_BRANCH}&ts=${Date.now()}`;
-  const r = await fetch(url, { headers:{ "Accept":"application/vnd.github.v3.raw" }, cache:"no-store" });
-  if(!r.ok) throw new Error(`HTTP ${r.status}（讀取 ${path} 失敗）`);
-  const txt = await r.text();
-  try { return JSON.parse(txt); }
-  catch(e){ console.error(`${path} 內容：`, txt); throw new Error("JSON 解析失敗"); }
-}
-
-/* ---------- 儲存（呼叫 Worker） ---------- */
-export async function saveDataJSON(data, commitMsg = "update data [skip ci]"){
-  const path = resolveDataPath();
-  if (DEMO_MODE){
-    console.warn(`[DEMO] 攔截儲存到 ${path}`, data);
-    alert(`DEMO 模式：不寫入遠端\n檔案：${path}`);
-    return { ok:true, demo:true };
+  let f = qs.get("file") || "public/data.json";
+  // 若只給 xxx.json，幫補上 public/
+  if (/^[A-Za-z0-9._\-\/]+\.json$/.test(f) && !/^public\//.test(f)) {
+    f = "public/" + f.replace(/^\/+/, "");
   }
-  const content = (typeof data === 'string') ? data : JSON.stringify(data, null, 2);
-  const res = await fetch(WORKER_ENDPOINT, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    credentials: 'include',                // 若 Worker 用 Cookie 驗證，務必帶上
-    body: JSON.stringify({
-      path,                                // ★ 告訴 Worker 要寫哪個檔
-      content,
-      message: /\[skip ci\]/i.test(commitMsg) ? commitMsg : (commitMsg + ' [skip ci]')
-    })
+  // 僅允許 public/*.json
+  if (!/^public\/[A-Za-z0-9._\-\/]+\.json$/.test(f)) {
+    f = "public/data.json";
+  }
+  return f;
+}
+
+/** 目前檔名（顯示用 Label） */
+export function currentFileLabel() {
+  const p = getFileParam();
+  return p.replace(/^public\//, "");
+}
+
+/** 讀取 data.json（或 ?file 指定的檔案）→ 回傳 JS 資料 */
+export async function fetchDataJSON() {
+  const path = getFileParam();
+  const url =
+    `https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/contents/${encodeURIComponent(path)}?ref=${GH_BRANCH}&ts=${Date.now()}`;
+
+  const res = await fetch(url, {
+    headers: { "Accept": "application/vnd.github.v3.raw" },
+    cache: "no-store"
   });
-  if(!res.ok){
-    const t = await res.text().catch(()=> '');
-    throw new Error(`Load failed（HTTP ${res.status}） ${t}`);
+  if (!res.ok) {
+    throw new Error(`HTTP ${res.status}（讀取 ${path} 失敗）`);
   }
-  return res.json();
+  const text = await res.text();
+  try {
+    return JSON.parse(text);
+  } catch (e) {
+    console.error("JSON 原文：", text);
+    throw new Error("JSON 解析失敗");
+  }
 }
 
-/* ---------- 最後更新時間（commit） ---------- */
-export async function fetchLastCommitTime(){
-  const path = resolveDataPath();
-  const url = `https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/commits?path=${encodeURIComponent(path)}&page=1&per_page=1`;
-  const r = await fetch(url, { cache:'no-store' });
-  if(!r.ok) throw new Error(`HTTP ${r.status}（讀取 commit 失敗）`);
+/**
+ * 存檔到 GitHub（透過 Cloudflare Worker）
+ * @param {any} data - 會自動 JSON.stringify(, null, 2)
+ * @param {string} message - commit 訊息
+ * @returns {Promise<void>}
+ */
+export async function saveDataJSON(data, message = "update via web [skip ci]") {
+  const path = getFileParam();
+
+  const payload = {
+    path,                                // 例如 public/data.json 或 public/mikey465.json
+    content: JSON.stringify(data, null, 2),
+    message
+  };
+
+  let res;
+  try {
+    res = await fetch(WORKER_ENDPOINT, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+  } catch (e) {
+    throw new Error(`Load failed（無法連線儲存伺服器）：${e.message}`);
+  }
+
+  const text = await res.text();
+  if (!res.ok) {
+    // Worker 會把 GitHub 的錯誤包成 JSON 回來
+    let detail = text;
+    try { detail = JSON.parse(text); } catch {}
+    const msg = typeof detail === "string" ? detail : JSON.stringify(detail);
+    throw new Error(`Load failed（HTTP ${res.status}） ${msg}`);
+  }
+
+  // optional：回傳結果需要的人可在這裡 parse
+  // const result = JSON.parse(text);
+}
+
+/** 取得目前檔案在 GitHub 的最後 commit 時間（ISO字串或 null） */
+export async function fetchLastCommitTime() {
+  const path = getFileParam();
+  const url =
+    `https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/commits?path=${encodeURIComponent(path)}&page=1&per_page=1`;
+  const r = await fetch(url, { cache: "no-store" });
+  if (!r.ok) return null;
   const commits = await r.json();
-  return Array.isArray(commits) && commits.length ? commits[0].commit.committer.date : null;
+  return Array.isArray(commits) && commits.length
+    ? commits[0].commit.committer.date
+    : null;
+}
+
+/** 依目前的 ?file 參數產生某頁連結（會自動帶上 file） */
+export function urlWithFile(relativeHref) {
+  const file = getFileParam();
+  const u = new URL(relativeHref, location.href);
+  u.searchParams.set("file", file.replace(/^public\//, ""));
+  return u.toString();
+}
+
+/** 儲存成功後導回首頁（或你指定的頁面），保留 ?file 參數 */
+export function goHomeAfterSave(target = "../../index.html") {
+  location.href = urlWithFile(target);
+}
+
+/** 工具：限制輸入為 0-9（可搭配 time 編輯器） */
+export function onlyDigits(str) {
+  return String(str || "").replace(/\D+/g, "");
 }
