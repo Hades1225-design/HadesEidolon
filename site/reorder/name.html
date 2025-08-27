@@ -5,6 +5,13 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>天堂 - BOSS時間 - 編輯排序（名字）</title>
   <link rel="stylesheet" href="./editor.css" />
+  <style>
+    /* 讓名字編輯器呈現四欄：編號 / 名字 / 動作 / 時間(隱藏) */
+    .row{ grid-template-columns: 3em 1fr 8.5em 0; }
+    .row > :last-child{ display:none; } /* 隱藏時間欄 */
+    .actions{ display:flex; gap:6px; justify-content:flex-end; }
+    .actions button{ padding:6px 10px; border-radius:8px; }
+  </style>
 </head>
 <body>
   <header>
@@ -12,8 +19,10 @@
       <h1>編輯排序（名字）</h1>
       <div class="toolbar">
         <button id="reload">重新讀取</button>
-        <button id="save">儲存到伺服器</button>
-        <a class="btn" href="./index.html" style="margin-left:auto">回首頁</a>
+        <button id="add">新增一列</button>
+        <button id="sortAZ">A→Z 排序（名字）</button>
+        <button id="save" style="margin-left:auto">儲存到伺服器</button>
+        <a class="btn" href="./index.html">回首頁</a>
         <span id="meta" class="muted" aria-live="polite"></span>
       </div>
     </div>
@@ -21,18 +30,11 @@
 
   <main class="container">
     <p class="muted" style="margin-top:8px">
-      可拖曳排序；點選名字可直接編輯。時間欄已隱藏。
+      可拖曳整列改變順序；點選名字可直接編輯；可用右側按鈕新增/刪除。
     </p>
     <div id="list" class="list" aria-live="polite"></div>
   </main>
 
-  <!-- 你的名字編輯器邏輯（保留原本功能） -->
   <script type="module" src="./app-names.js"></script>
-
-  <style>
-    /* 讓名字編輯器只顯示兩欄（編號 / 名字），隱藏時間欄 */
-    .row{ grid-template-columns: 3em 1fr 0; }
-    .row > :last-child{ display:none; }
-  </style>
 </body>
 </html>
