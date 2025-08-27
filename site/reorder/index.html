@@ -85,12 +85,11 @@
     /* 匯出時加白底 */
     .exporting { background:#fff !important; }
 
-
-    /* 匯出 PNG（卡片）：單欄直向顯示 */
+    /* 匯出 PNG（卡片）：直向排序 + 多欄支援 */
     .export-vertical {
       display: flex !important;
       flex-direction: column;
-      gap: 3px;
+      gap: 5px;
       justify-content: flex-start;
       align-items: flex-start;
       width: max-content;
@@ -98,8 +97,8 @@
     }
     .export-vertical .card {
       margin: 0;
-      width: 185px;  /* 卡片寬度跟原本保持一致 */
-      height: 30px;  /* 卡片高度保持一致 */
+      width: 185px;
+      height: 30px;
     }
 
     /* 表格匯出樣式（匯出時動態掛在暫存節點上） */
