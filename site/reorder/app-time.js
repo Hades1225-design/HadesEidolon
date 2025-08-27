@@ -117,6 +117,13 @@ async function onSave(){
     alert(`儲存失敗：${e.message}`);
   }
 }
+async function saveData() {
+  await saveToServer();
+  goHome();
+}
+
+document.getElementById("save").addEventListener("click", saveData);
+document.addEventListener("DOMContentLoaded", setupSharedLinks);
 
 /* -12h 規則：最近一次發生的日期 */
 function resolveNextDate(hhmm){
