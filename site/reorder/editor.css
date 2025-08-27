@@ -1,0 +1,85 @@
+:root{
+  --border:#e5e7eb;
+  --muted:#6b7280;
+  --bg:#fff;
+  --text:#111;
+}
+
+*{ box-sizing:border-box; }
+
+html,body{
+  margin:0;
+  font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,"PingFang TC","Microsoft JhengHei",sans-serif;
+  color:var(--text);
+  background:#fafafa;
+}
+
+/* Header / Toolbar / Container */
+header{
+  position:sticky; top:0; z-index:10;
+  background:#ffffffcc;
+  backdrop-filter:saturate(140%) blur(6px);
+  border-bottom:1px solid var(--border);
+}
+.container{ max-width:960px; margin:0 auto; padding:14px 16px; }
+h1{ margin:0 0 10px; font-size:20px; }
+.toolbar{ display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+button, input, a.btn{
+  padding:8px 10px;
+  border:1px solid var(--border);
+  border-radius:10px;
+  background:#fff;
+  color:var(--text);
+  text-decoration:none;
+  display:inline-block;
+}
+.muted{ color:var(--muted); font-size:12px; }
+
+/* List / Row（共用三欄版型：編號 / 名字 / 時間） */
+.list{
+  border:1px solid var(--border);
+  border-radius:12px;
+  overflow:hidden;
+}
+.row{
+  display:grid;
+  grid-template-columns: 3em 1fr 8ch;  /* idx / name / time */
+  gap:10px;
+  align-items:center;
+  padding:10px 12px;
+  border-bottom:1px solid var(--border);
+  background:var(--bg);
+}
+.row:last-child{ border-bottom:none; }
+
+.idx{ text-align:right; color:#666; }
+
+/* 名字欄：可當文字或輸入框使用 */
+.name-cell{
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  font-weight:600;
+}
+.name-input{
+  width:100%;
+  padding:8px 10px;
+  border:1px solid var(--border);
+  border-radius:8px;
+  background:#fff;
+}
+
+/* 時間欄（time.html 可輸入；name.html 可隱藏或唯讀） */
+.time-input{
+  width:8ch;
+  text-align:center;
+  font-variant-numeric:tabular-nums;
+}
+
+/* 拖曳佔位（若名字編輯器有拖曳排序） */
+.ghost{
+  height:48px;
+  border:1px dashed #bbb;
+  background:#f9fafb;
+  grid-column:1/-1;
+}
