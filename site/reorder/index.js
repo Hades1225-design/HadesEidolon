@@ -172,13 +172,9 @@ function render(){
       timeEl.textContent = '存活';
       card.classList.add('status-green');
     }else{
-      // 顯示格式：絕對 → "MM/DD HH:mm"；只有 HHmm → "HH:mm"
-      if(/^\d{4}-\d{2}-\d{2}\s\d{4}$/.test(t)){
-        const [d, hm] = t.split(' ');
-        const [,mm,dd] = d.split('-');
-        
-        timeEl.textContent = `${t.slice(0,2)}:${t.slice(2,4)}`;
-      }
+      // 不論是否包含日期，統一只顯示 HH:mm
+      const hhmm = /^\d{4}-\d{2}-\d{2}\s\d{4}$/.test(t) ? t.slice(11,15) : t;
+      timeEl.textContent = `${hhmm.slice(0,2)}:${hhmm.slice(2,4)}`;
 
       // 顏色：過去=紅；其餘正常；「未來最近」=黃
       let tgtM = null;
