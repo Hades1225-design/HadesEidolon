@@ -1,11 +1,13 @@
-name = "json-saver"
-main = "src/worker.mjs"
-compatibility_date = "2024-11-01"
+name = "hades-json-writer"
+main = "worker.js"
+compatibility_date = "2024-12-01"
 
 [vars]
-REPO_OWNER = "Hades1225-design"
-REPO_NAME  = "HadesEidolon"          # ← 這裡改成目標專案
-REPO_BRANCH = "main"
-
-# 正式上線，限制成你的 Pages 網域（建議用完整來源）
+GH_OWNER  = "Hades1225-design"
+GH_REPO   = "HadesEidolon"
+GH_BRANCH = "main"
+# 多個來源用逗號隔開（GitHub Pages + 你的測試域）
 ALLOWED_ORIGIN = "https://hades1225-design.github.io"
+
+# 機密用 secret
+# wrangler secret put GH_TOKEN
