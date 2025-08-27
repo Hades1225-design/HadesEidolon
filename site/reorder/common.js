@@ -118,7 +118,7 @@ export function urlWithFile(relativeHref) {
 }
 
 /** 儲存成功後導回首頁（或你指定的頁面），保留 ?file 參數 */
-export function goHomeAfterSave(target = "../../index.html") {
+export function goHomeAfterSave(target = "./index.html") {
   location.href = urlWithFile(target);
 }
 
