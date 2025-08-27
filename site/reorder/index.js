@@ -172,9 +172,9 @@ async function downloadPNG(){
   const pageCount = Math.ceil(total / pageSize);
 
   const sorted = [];
-  for (let col = 0; row < 5; col++) {
-    for (let row = 0; col < 20; row++) {
-      const idx = row + col * 20;
+  for (let col = 0; col < 5; col++) {
+    for (let row = 0; row < 20; row++) {
+      const idx = row + col * 5;
       if (idx < total) sorted.push(cards[idx]);
     }
   }
