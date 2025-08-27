@@ -309,35 +309,61 @@
   }
 
   /* ========= 匯出 PNG（卡片：維持你原本的 Grid 30/列） ========= */
-  async function downloadPNG_Cards(){
-    if (!window.html2canvas){ alert("圖片匯出工具載入中，請再試一次。"); return; }
-    const target = document.getElementById('list');
-    const originalClass = target.className;
+  async function downloadPNG() {
+  if (!window.html2canvas) {
+    alert("圖片匯出工具載入中，請再試一次。");
+    return;
+  }
 
-    // 臨時切成 30 欄 Grid
-    target.classList.add('export-grid'); // 這個 class 不在 CSS；直接用內嵌 style 控制：
-    target.style.display = "grid";
-    target.style.gridTemplateColumns = "repeat(4, 190px)";
-    target.style.gridAutoRows = "25px";
-    target.style.gap = "8px";
-    Array.from(target.children).forEach(el => { el.style.margin = "0"; });
+  const target = document.getElementById('list');
+  const originalClass = target.className;
 
-    document.body.classList.add('exporting');
-    if (document.fonts && document.fonts.ready) { try { await document.fonts.ready; } catch{} }
+  // 匯出模式 → Grid（5 欄 × 20 列）
+  target.classList.add('export-grid');
+  document.body.classList.add('exporting');
 
-    const canvas = await html2canvas(target, {
-      backgroundColor:'#ffffff', scale:2, useCORS:true,
-      windowWidth: target.scrollWidth, windowHeight: target.scrollHeight
+  // 等字型載入，避免匯出時字跑位
+  if (document.fonts?.ready) {
+    try { await document.fonts.ready; } catch {}
+  }
+
+  const cards = Array.from(target.querySelectorAll('.card'));
+  const total = cards.length;
+  const pageSize = 100;  // 每頁最多 100 張（5 欄 × 20 列）
+  const pageCount = Math.ceil(total / pageSize);
+
+  // 直向排序：先依欄，再依列
+  const sorted = [];
+  for (let col = 0; col < 5; col++) {
+    for (let row = 0; row < 20; row++) {
+      const idx = row + col * 20;
+      if (idx < total) sorted.push(cards[idx]);
+    }
+  }
+
+  for (let i = 0; i < pageCount; i++) {
+    // 顯示當前頁卡片
+    sorted.forEach((c, idx) => {
+      c.style.display = (idx >= i * pageSize && idx < (i + 1) * pageSize) ? '' : 'none';
     });
 
-    triggerDownload(canvas.toDataURL('image/png'), `cards_${stamp()}.png`);
+    const canvas = await html2canvas(target, {
+      backgroundColor: '#ffffff',
+      scale: 2,
+      useCORS: true,
+      windowWidth: target.scrollWidth,
+      windowHeight: target.scrollHeight
+    });
 
-    // 還原
-    target.className = originalClass;
-    target.removeAttribute('style');
-    Array.from(target.children).forEach(el => { el.style.removeProperty('margin'); });
-    document.body.classList.remove('exporting');
+    const url = canvas.toDataURL('image/png');
+    triggerDownload(url, `cards_page${i + 1}_${stamp()}.png`);
   }
+
+  // 還原
+  cards.forEach(c => c.style.display = '');
+  target.className = originalClass;
+  document.body.classList.remove('exporting');
+}
 
   /* ========= 匯出 PNG（表格：每行 30 欄，左到右、上到下） ========= */
   async function downloadPNG_Table(){
