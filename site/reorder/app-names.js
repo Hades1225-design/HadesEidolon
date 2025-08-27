@@ -93,7 +93,7 @@ async function onSave(){
     // 回首頁並保留 file 參數
     const qs = new URLSearchParams(location.search);
     const file = qs.get('file');
-    const url = new URL("../../index.html", location.href);
+    const url = new URL("./index.html", location.href);
     if (file) url.searchParams.set('file', file);
     location.href = url.toString();
 
