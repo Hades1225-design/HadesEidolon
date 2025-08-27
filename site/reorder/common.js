@@ -5,7 +5,7 @@ export const GH_REPO   = "HadesEidolon";
 export const GH_BRANCH = "main";
 
 // 你的寫入 API（Cloudflare Worker /save）
-export const WORKER_ENDPOINT = "https://hadeseidolon-json-saver.b5cp686csv.workers.dev/api/save"; // ←換成實際 URL
+export const WORKER_ENDPOINT = "https://green-hat-b921.b5cp686csv.workers.dev/api/save"; // ←換成實際 URL
 
 // DEMO：網址帶 ?demo=1 時，不寫遠端
 export const DEMO_MODE = (() => {
