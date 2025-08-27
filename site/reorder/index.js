@@ -153,6 +153,7 @@ function findNextClosestIndex(arr, nowHHmm){
 }
 
 /* ========= 匯出 PNG（卡片：單欄直向顯示） ========= */
+/* ========= 匯出 PNG（卡片：直向排序 + 高度限制） ========= */
 async function downloadPNG(){
   if (!window.html2canvas) {
     alert("圖片匯出工具載入中，請再試一次。");
@@ -162,15 +163,35 @@ async function downloadPNG(){
   const target = document.getElementById('list');
   const originalClass = target.className;
 
-  // 匯出時：單欄直向
+  // 匯出時切換為「多欄直向」模式
   target.classList.add('export-vertical');
   document.body.classList.add('exporting');
 
-  // 等字型載入，避免匯出時字跑位
+  // 等字型載入，避免量測錯誤
   if (document.fonts?.ready) { 
     try { await document.fonts.ready; } catch {} 
   }
 
+  // 設定單欄最大高度（px）
+  const MAX_HEIGHT = 800;
+
+  // 動態計算欄數
+  const cards = Array.from(target.querySelectorAll('.card'));
+  const cardHeight = 30 + 4; // 卡片高度 + gap
+  const perCol = Math.floor(MAX_HEIGHT / cardHeight);
+  const totalCols = Math.ceil(cards.length / perCol);
+
+  // 套用多欄 CSS
+  target.style.display = "grid";
+  target.style.gridTemplateColumns = `repeat(${totalCols}, 190px)`;
+  target.style.gridAutoRows = `${cardHeight - 8}px`; // 卡片高度
+  target.style.gap = "8px";
+  target.style.width = "max-content";
+
+  // 等待重排
+  await new Promise(r => setTimeout(r, 50));
+
+  // 截圖
   const canvas = await html2canvas(target, {
     backgroundColor: '#ffffff',
     scale: 2,
@@ -183,6 +204,7 @@ async function downloadPNG(){
 
   // 還原樣式
   target.className = originalClass;
+  target.removeAttribute("style");
   document.body.classList.remove('exporting');
 }
 
