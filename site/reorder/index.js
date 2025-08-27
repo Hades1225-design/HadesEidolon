@@ -1,22 +1,8 @@
-// site/index.js
+/* ========== 注入 ./common.js ========== */
 import {
   fetchDataJSON, saveDataJSON, currentFileLabel,
   fetchLastCommitTime, urlWithFile, goHomeAfterSave
 } from './common.js';
-
-// 取得 data.json 最後更新時間
-async function fetchLastCommitTime() {
-  const qs = new URLSearchParams(location.search);
-  const file = qs.get("file") || "public/data.json";  // 預設讀 data.json
-  const url = `https://api.github.com/repos/Hades1225-design/HadesEidolon/commits?path=${file}&page=1&per_page=1`;
-
-  const res = await fetch(url, { cache: "no-store" });
-  if (!res.ok) throw new Error(`HTTP ${res.status}（讀取 GitHub commit 失敗）`);
-  const commits = await res.json();
-  return Array.isArray(commits) && commits.length
-    ? commits[0].commit.committer.date
-    : null;
-}
 
 /* ========== DOM 取得 ========== */
 const $list  = document.getElementById('list');
