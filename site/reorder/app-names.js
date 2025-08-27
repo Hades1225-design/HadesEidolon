@@ -4,8 +4,6 @@ const $list   = document.getElementById('list');
 const $meta   = document.getElementById('meta');
 const $reload = document.getElementById('reload');
 const $save   = document.getElementById('save');
-const $add    = document.getElementById('add');
-const $sortAZ = document.getElementById('sortAZ');
 
 let items = [];            // [[name, hhmm|null], ...]
 let dragIndex = null;      // 目前拖曳中的起始索引
@@ -15,8 +13,6 @@ init(false);
 // 工具列事件
 $reload.onclick = () => init(true);
 $save.onclick   = onSave;
-$add.onclick    = () => { addRow(items.length); };
-$sortAZ.onclick = () => { sortByNameAZ(); };
 
 // 初始化載入
 async function init(manual){
@@ -80,9 +76,10 @@ function render(){
       items[idx][0] = e.target.value;
     });
 
-    // 動作（新增 / 刪除）
+    // 動作（每列：新增 / 刪除）
     const actions = document.createElement('div');
     actions.className = 'actions';
+
     const btnAddBelow = document.createElement('button');
     btnAddBelow.type = 'button';
     btnAddBelow.textContent = '新增';
@@ -91,9 +88,7 @@ function render(){
     const btnDelete = document.createElement('button');
     btnDelete.type = 'button';
     btnDelete.textContent = '刪除';
-    btnDelete.addEventListener('click', ()=>{
-      deleteRow(idx);
-    });
+    btnDelete.addEventListener('click', ()=> deleteRow(idx));
 
     actions.append(btnAddBelow, btnDelete);
 
@@ -101,7 +96,7 @@ function render(){
     const timePlaceholder = document.createElement('div');
     timePlaceholder.textContent = time ?? '';
 
-    // 事件：拖曳排序
+    // 拖曳事件
     row.addEventListener('dragstart', onDragStart);
     row.addEventListener('dragover',  onDragOver);
     row.addEventListener('drop',       onDrop);
@@ -117,13 +112,11 @@ function onDragStart(e){
   const idx = Number(e.currentTarget.dataset.index);
   dragIndex = idx;
   e.dataTransfer.effectAllowed = 'move';
-  // Firefox 需要 setData 才能觸發 drop
   try{ e.dataTransfer.setData('text/plain', String(idx)); }catch{}
-  // 視覺
   e.currentTarget.style.opacity = '0.6';
 }
 function onDragOver(e){
-  e.preventDefault(); // 允許 drop
+  e.preventDefault();
   const overRow = e.currentTarget;
   overRow.style.background = '#f9fafb';
 }
@@ -135,20 +128,18 @@ function onDrop(e){
   const moved = items.splice(dragIndex, 1)[0];
   items.splice(toIdx, 0, moved);
   dragIndex = null;
-  render(); // 重新渲染以更新索引與事件
+  render();
 }
 function onDragEnd(e){
   e.currentTarget.style.opacity = '';
-  // 清理 hover 樣式
   Array.from(document.querySelectorAll('.row')).forEach(r=> r.style.background = '');
 }
 
-// 新增 / 刪除 / 排序
+// 每列 新增 / 刪除
 function addRow(insertAt){
   const at = Math.max(0, Math.min(insertAt, items.length));
-  items.splice(at, 0, ['', null]); // 新增空白一列
+  items.splice(at, 0, ['', null]);
   render();
-  // 聚焦新列輸入
   const input = $list.querySelector(`.row:nth-child(${at+1}) .name-input`);
   if(input) input.focus();
 }
@@ -157,19 +148,21 @@ function deleteRow(idx){
   items.splice(idx, 1);
   render();
 }
-function sortByNameAZ(){
-  items.sort((a,b)=> (a[0]||'').localeCompare(b[0]||'', 'zh-Hant'));
-  render();
-}
 
 // 儲存
+let saving = false;
 async function onSave(){
+  if(saving) return;
+  saving = true;
+  $save.disabled = true;
   try{
     await saveDataJSON(items);
     const t = new Date().toLocaleTimeString();
     $meta.textContent = `儲存成功（${t}）`;
-    alert('已成功儲存到伺服器！');
   }catch(e){
     alert(`儲存失敗：${e.message}`);
+  }finally{
+    saving = false;
+    $save.disabled = false;
   }
 }
