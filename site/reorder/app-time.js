@@ -3,6 +3,17 @@ import {
   fetchDataJSON, saveDataJSON, currentFileLabel,
   fetchLastCommitTime, urlWithFile, goHomeAfterSave
 } from './common.js';
+
+const $goHome = document.getElementById('goHomeAfterSave');
+  if ($goHome) {
+  const homeURL = urlWithFile('./index.html');
+  $goHome.setAttribute('href', homeURL);
+  $goHome.addEventListener('click', (e) => {
+    e.preventDefault();             // 阻止預設 # 跳頂部
+    location.href = homeURL;        // 導回首頁，保留 ?file= 參數
+  });
+}
+
 const $list = document.getElementById('list');
 const $meta = document.getElementById('meta');
 const $reload = document.getElementById('reload');
