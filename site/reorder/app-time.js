@@ -4,14 +4,13 @@ import {
   fetchLastCommitTime, urlWithFile, goHomeAfterSave
 } from './common.js';
 
-/* ========== 回首頁按鈕（自動帶 ?file） ========== */
 const $goHome = document.getElementById('goHomeAfterSave');
-if ($goHome) {
-  const homeURL = urlWithFile('./index.html');    // 從 /site/reorder/ 回到 /site/index.html
-  $goHome.href = homeURL;
+  if ($goHome) {
+  const homeURL = urlWithFile('./index.html');
+  $goHome.setAttribute('href', homeURL);
   $goHome.addEventListener('click', (e) => {
-    e.preventDefault();
-    location.href = homeURL;
+    e.preventDefault();             // 阻止預設 # 跳頂部
+    location.href = homeURL;        // 導回首頁，保留 ?file= 參數
   });
 }
 
