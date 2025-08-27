@@ -13,7 +13,7 @@ export const COMMITS_API =
 
 // ⚠️ 這裡換成你自己的 Cloudflare Worker（或其他 API）URL：
 // 需支援 POST，並在後端用 GitHub Token 寫入 repo。
-export const WORKER_ENDPOINT = https://hadeseidolon-json-saver.b5cp686csv.workers.dev/api/save;
+export const WORKER_ENDPOINT = "https://hadeseidolon-json-saver.b5cp686csv.workers.dev/api/save";
 
 // ====== 讀取 data.json ======
 export async function fetchDataJSON() {
