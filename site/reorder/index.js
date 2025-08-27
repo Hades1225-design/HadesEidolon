@@ -165,10 +165,10 @@ async function downloadPNG(){
   const cards = Array.from(document.querySelectorAll('#list .card'));
   if (!cards.length) return;
 
-  const CARD_W = 190;
-  const CARD_H = 35;
-  const GAP    = 8;
-  const MAX_HEIGHT = 800;               // ← 想要的最大欄高（px）可自行調整
+  const CARD_W = 185;
+  const CARD_H = 30;
+  const GAP    = 5;
+  const MAX_HEIGHT = 400;               // ← 想要的最大欄高（px）可自行調整
 
   // 一欄可以放幾張（直向）
   const perCol = Math.max(1, Math.floor((MAX_HEIGHT + GAP) / (CARD_H + GAP)));
