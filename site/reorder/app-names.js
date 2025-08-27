@@ -1,5 +1,7 @@
 // site/reorder/app-names.js
 import { fetchDataJSON, saveDataJSON } from './common.js';
+import { currentFileLabel } from './common.js';
+document.getElementById('fileBadge')?.replaceChildren(document.createTextNode(`檔案：${currentFileLabel()}`));
 
 const $list   = document.getElementById('list');
 const $meta   = document.getElementById('meta');
