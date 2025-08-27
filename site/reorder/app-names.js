@@ -1,17 +1,24 @@
 import { fetchDataJSON, saveDataJSON } from './common.js';
 
-const $list = document.getElementById('list');
-const $meta = document.getElementById('meta');
+const $list   = document.getElementById('list');
+const $meta   = document.getElementById('meta');
 const $reload = document.getElementById('reload');
-const $save = document.getElementById('save');
+const $save   = document.getElementById('save');
+const $add    = document.getElementById('add');
+const $sortAZ = document.getElementById('sortAZ');
 
-let items = []; // [[name, hhmm|null], ...]
+let items = [];            // [[name, hhmm|null], ...]
+let dragIndex = null;      // 目前拖曳中的起始索引
 
 init(false);
 
+// 工具列事件
 $reload.onclick = () => init(true);
-$save.onclick = saveChanges;
+$save.onclick   = onSave;
+$add.onclick    = () => { addRow(items.length); };
+$sortAZ.onclick = () => { sortByNameAZ(); };
 
+// 初始化載入
 async function init(manual){
   try{
     const arr = await fetchDataJSON();
@@ -21,14 +28,17 @@ async function init(manual){
   }catch(e){
     items = [];
     render();
-    $meta.textContent = `讀取失敗：${e.message}`;
-    if(manual) alert(e.message);
+    const msg = `讀取失敗：${e.message}`;
+    $meta.textContent = msg;
+    if(manual) alert(msg);
+    console.error(e);
   }
 }
 
+// 正規化資料
 function normalize(arr){
   if(!Array.isArray(arr)) return [];
-  return arr.map(item => {
+  return arr.map(item=>{
     if(Array.isArray(item)){
       const name = String(item[0] ?? '');
       const t = item[1];
@@ -46,12 +56,14 @@ function normalize(arr){
   });
 }
 
+// 重新渲染清單
 function render(){
   $list.innerHTML = '';
-
-  items.forEach(([name], idx) => {
+  items.forEach(([name, time], idx)=>{
     const row = document.createElement('div');
     row.className = 'row';
+    row.draggable = true;
+    row.dataset.index = String(idx);
 
     // 編號
     const idxCell = document.createElement('div');
@@ -63,22 +75,99 @@ function render(){
     nameInput.className = 'name-input';
     nameInput.type = 'text';
     nameInput.value = name;
-    nameInput.addEventListener('input', e => {
-      items[idx][0] = e.target.value.trim();
+    nameInput.placeholder = '輸入名字';
+    nameInput.addEventListener('input', e=>{
+      items[idx][0] = e.target.value;
     });
 
-    // 時間欄位占位，已由 name.html 隱藏
-    const hiddenTime = document.createElement('div');
+    // 動作（新增 / 刪除）
+    const actions = document.createElement('div');
+    actions.className = 'actions';
+    const btnAddBelow = document.createElement('button');
+    btnAddBelow.type = 'button';
+    btnAddBelow.textContent = '新增';
+    btnAddBelow.addEventListener('click', ()=> addRow(idx+1));
 
-    row.append(idxCell, nameInput, hiddenTime);
+    const btnDelete = document.createElement('button');
+    btnDelete.type = 'button';
+    btnDelete.textContent = '刪除';
+    btnDelete.addEventListener('click', ()=>{
+      deleteRow(idx);
+    });
+
+    actions.append(btnAddBelow, btnDelete);
+
+    // 時間佔位（name.html 會用 CSS 隱藏）
+    const timePlaceholder = document.createElement('div');
+    timePlaceholder.textContent = time ?? '';
+
+    // 事件：拖曳排序
+    row.addEventListener('dragstart', onDragStart);
+    row.addEventListener('dragover',  onDragOver);
+    row.addEventListener('drop',       onDrop);
+    row.addEventListener('dragend',    onDragEnd);
+
+    row.append(idxCell, nameInput, actions, timePlaceholder);
     $list.appendChild(row);
   });
 }
 
-async function saveChanges(){
+// 拖曳事件
+function onDragStart(e){
+  const idx = Number(e.currentTarget.dataset.index);
+  dragIndex = idx;
+  e.dataTransfer.effectAllowed = 'move';
+  // Firefox 需要 setData 才能觸發 drop
+  try{ e.dataTransfer.setData('text/plain', String(idx)); }catch{}
+  // 視覺
+  e.currentTarget.style.opacity = '0.6';
+}
+function onDragOver(e){
+  e.preventDefault(); // 允許 drop
+  const overRow = e.currentTarget;
+  overRow.style.background = '#f9fafb';
+}
+function onDrop(e){
+  e.preventDefault();
+  const toIdx = Number(e.currentTarget.dataset.index);
+  if (dragIndex === null || toIdx === dragIndex) return;
+
+  const moved = items.splice(dragIndex, 1)[0];
+  items.splice(toIdx, 0, moved);
+  dragIndex = null;
+  render(); // 重新渲染以更新索引與事件
+}
+function onDragEnd(e){
+  e.currentTarget.style.opacity = '';
+  // 清理 hover 樣式
+  Array.from(document.querySelectorAll('.row')).forEach(r=> r.style.background = '');
+}
+
+// 新增 / 刪除 / 排序
+function addRow(insertAt){
+  const at = Math.max(0, Math.min(insertAt, items.length));
+  items.splice(at, 0, ['', null]); // 新增空白一列
+  render();
+  // 聚焦新列輸入
+  const input = $list.querySelector(`.row:nth-child(${at+1}) .name-input`);
+  if(input) input.focus();
+}
+function deleteRow(idx){
+  if (idx < 0 || idx >= items.length) return;
+  items.splice(idx, 1);
+  render();
+}
+function sortByNameAZ(){
+  items.sort((a,b)=> (a[0]||'').localeCompare(b[0]||'', 'zh-Hant'));
+  render();
+}
+
+// 儲存
+async function onSave(){
   try{
     await saveDataJSON(items);
-    $meta.textContent = `儲存成功 (${new Date().toLocaleTimeString()})`;
+    const t = new Date().toLocaleTimeString();
+    $meta.textContent = `儲存成功（${t}）`;
     alert('已成功儲存到伺服器！');
   }catch(e){
     alert(`儲存失敗：${e.message}`);
