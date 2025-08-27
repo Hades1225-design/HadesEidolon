@@ -169,15 +169,14 @@ function render(){
     timeEl.className = 'time';
 
     if(t === null){
-      timeEl.textContent = '已重生';
+      timeEl.textContent = '存活';
       card.classList.add('status-green');
     }else{
       // 顯示格式：絕對 → "MM/DD HH:mm"；只有 HHmm → "HH:mm"
       if(/^\d{4}-\d{2}-\d{2}\s\d{4}$/.test(t)){
         const [d, hm] = t.split(' ');
         const [,mm,dd] = d.split('-');
-        timeEl.textContent = `${mm}/${dd} ${hm.slice(0,2)}:${hm.slice(2,4)}`;
-      }else{ // "HHmm"
+        
         timeEl.textContent = `${t.slice(0,2)}:${t.slice(2,4)}`;
       }
 
