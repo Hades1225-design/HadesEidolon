@@ -254,6 +254,6 @@ function wireEditorLinks(){
   const file = qs.get('file');
   const addParam = file ? `?file=${encodeURIComponent(file)}` : '';
 
-  if($linkName) $linkName.href = `./site/reorder/name.html${addParam}`;
-  if($linkTime) $linkTime.href = `./site/reorder/time.html${addParam}`;
+  if($linkName) $linkName.href = `./name.html${addParam}`;
+  if($linkTime) $linkTime.href = `./time.html${addParam}`;
 }
