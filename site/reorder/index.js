@@ -22,7 +22,6 @@ const $list = document.getElementById('list');
 const $meta = document.getElementById('meta');
 document.getElementById('reload').onclick = () => init(true);
 document.getElementById('download-cards').onclick = downloadPNG;
-document.getElementById('download-table').onclick = downloadPNG_Table;
 
 let items = []; // [ [name, hhmm|null], ... ]
 
@@ -166,12 +165,12 @@ async function downloadPNG(){
   if (!cards.length) return;
 
   const CARD_W = 185;
-  const CARD_H = 30;
+  const CARD_H = 35;
   const GAP    = 5;
   const MAX_HEIGHT = 400;               // ← 想要的最大欄高（px）可自行調整
 
   // 一欄可以放幾張（直向）
-  const perCol = 20; //Math.max(1, Math.floor((MAX_HEIGHT + GAP) / (CARD_H + GAP)))
+  const perCol = 18; //Math.max(1, Math.floor((MAX_HEIGHT + GAP) / (CARD_H + GAP)))
   const totalCols = Math.ceil(cards.length / perCol);
 
   // 2) 建立螢幕外容器，用 grid 直向擺放
@@ -206,77 +205,6 @@ async function downloadPNG(){
   triggerDownload(canvas.toDataURL('image/png'), `cards_vertical_${stamp()}.png`);
 
   // 5) 清理
-  document.body.removeChild(wrap);
-  document.body.classList.remove('exporting');
-}
-
-/* ========= 匯出 PNG（表格） ========= */
-async function downloadPNG_Table(){
-  if (!window.html2canvas){ alert("圖片匯出工具載入中，請再試一次。"); return; }
-
-  const nowHHmm = hhmmNow();
-  const nextIdx = findNextClosestIndex(items, nowHHmm);
-
-  const wrap = document.createElement('div');
-  wrap.className = 'export-table-wrap';
-  const table = document.createElement('table');
-  table.className = 'export-table';
-
-  const perRow = 5;
-  const rowsCount = Math.ceil(items.length / perRow);
-
-  for(let r=0; r<rowsCount; r++){
-    const tr = document.createElement('tr');
-    for(let c=0; c<perRow; c++){
-      const idx = r*perRow + c;
-      const td  = document.createElement('td');
-
-      if(idx < items.length){
-        const [name, t] = items[idx] || ["", null];
-
-        const nSpan = document.createElement('span');
-        nSpan.className = 'cell-name';
-        nSpan.textContent = name || '—';
-
-        const tSpan = document.createElement('span');
-        tSpan.className = 'cell-time';
-        if(t === null){
-          tSpan.textContent = '已重生';
-          td.classList.add('export-green');
-        }else{
-          tSpan.textContent = toDisplay(t);
-          const raw = HHmmToMinutes(t) - nowMinutes();
-          const isEarlyMorning = t <= WRAP_CUTOFF;
-
-          if(raw < 0 && !isEarlyMorning){
-            td.classList.add('export-red');
-          }else if(idx === nextIdx){
-            td.classList.add('export-yellow');
-          }
-        }
-
-        td.append(nSpan, tSpan);
-      }else{
-        td.innerHTML = '&nbsp;';
-      }
-      tr.appendChild(td);
-    }
-    table.appendChild(tr);
-  }
-
-  wrap.appendChild(table);
-  document.body.appendChild(wrap);
-
-  document.body.classList.add('exporting');
-  if (document.fonts && document.fonts.ready) { try { await document.fonts.ready; } catch{} }
-
-  const canvas = await html2canvas(wrap, {
-    backgroundColor:'#ffffff', scale:2, useCORS:true,
-    windowWidth: wrap.scrollWidth, windowHeight: wrap.scrollHeight
-  });
-
-  triggerDownload(canvas.toDataURL('image/png'), `table_${stamp()}.png`);
-
   document.body.removeChild(wrap);
   document.body.classList.remove('exporting');
 }
