@@ -34,41 +34,35 @@
     }
 
     
-/* === 卡片容器：每欄固定 20 張，橫向捲動 === */
+/* 讓前端顯示也固定每欄 20 張（由上到下，再往右） */
 .list{
-  /* 改成 Grid；先排滿一欄再換下一欄 */
   display: grid;
-  grid-auto-flow: column;
-  grid-auto-rows: 35px;                 /* 每張卡片固定高度：35px */
-  grid-template-columns: repeat(auto-fill, 190px); /* 卡片寬 190px */
+  grid-auto-flow: column;            /* 先填滿列（rows），再換欄 */
+  grid-template-rows: repeat(20, 35px); /* ← 固定 20 列，每列高 35px（=卡片高） */
+  grid-auto-columns: 190px;          /* 每一欄寬度固定 190px（=卡片寬） */
   gap: 8px;
 
-  /* 固定容器高度 = 20 張卡片 + 19 個間距 */
-  max-height: calc(35px * 20 + 8px * 19); /* = 852px */
-  height: calc(35px * 20 + 8px * 19);
-
-  /* 讓多出來的欄位往右延伸，橫向捲動 */
+  /* 捲動與對齊 */
   overflow-x: auto;
   overflow-y: hidden;
-
   justify-content: start;
-  align-items: start;
+  align-content: start;
+
   margin-top: 12px;
-  padding-bottom: 4px; /* 捲動時底部留一點緩衝，可依喜好調整 */
+  padding-bottom: 4px;
 }
 
-/* 卡片尺寸保持固定（對齊匯出設定） */
+/* 卡片與匯出一致的尺寸 */
 .card{
   width: 190px;
   height: 35px;
   padding: 5px 6px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
+  display: flex; align-items: center; justify-content: space-between;
   border: 1px solid var(--border);
   border-radius: 5px;
   background: var(--card-bg);
   box-sizing: border-box;
+  margin: 0;                         /* 避免影響格線 */
 }
 
     .card .name{
