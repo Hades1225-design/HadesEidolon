@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>展示頁 · data.json</title>
+  <title>天堂 - BOSS時間</title>
   <style>
     :root{
       --border:#e5e7eb;
@@ -38,8 +38,8 @@
 .list{
   display: grid;
   grid-auto-flow: column;            /* 先填滿列（rows），再換欄 */
-  grid-template-rows: repeat(20, 35px); /* ← 固定 20 列，每列高 35px（=卡片高） */
-  grid-auto-columns: 190px;          /* 每一欄寬度固定 190px（=卡片寬） */
+  grid-template-rows: repeat(18, 35px); /* ← 固定 20 列，每列高 35px（=卡片高） */
+  grid-auto-columns: 185px;          /* 每一欄寬度固定 185px（=卡片寬） */
   gap: 8px;
 
   /* 捲動與對齊 */
@@ -54,7 +54,7 @@
 
 /* 卡片與匯出一致的尺寸 */
 .card{
-  width: 190px;
+  width: 185px;
   height: 35px;
   padding: 5px 6px;
   display: flex; align-items: center; justify-content: space-between;
@@ -95,22 +95,6 @@
 
     /* 匯出時加白底 */
     .exporting { background:#fff !important; }
-
-    /* 匯出 PNG（卡片）：直向排序 + 多欄支援 */
-    .export-vertical {
-      display: flex !important;
-      flex-direction: column;
-      gap: 5px;
-      justify-content: flex-start;
-      align-items: flex-start;
-      width: max-content;
-      background: #fff;
-    }
-    .export-vertical .card {
-      margin: 0;
-      width: 185px;
-      height: 30px;
-    }
     
     /* 匯出用臨時容器：多欄直向 + 固定卡片尺寸 */
 .export-grid-dynamic{
@@ -125,36 +109,6 @@
   height: 30px;
 }
 
-    /* 表格匯出樣式（匯出時動態掛在暫存節點上） */
-    .export-table-wrap{
-      position: fixed; left: -200vw; top: 0;
-      background: #fff;
-      padding: 6px;
-      border: 1px solid var(--border);
-    }
-    .export-table{
-      border-collapse: collapse;
-      table-layout: fixed;
-      background:#fff;
-    }
-    .export-table td{
-      width: 150px;
-      height: 20px;
-      border: 1px solid var(--border);
-      vertical-align: middle;
-      text-align: center;
-      padding: 6px 4px;
-      font-size: 14px;
-    }
-    .export-table .cell-name{
-      display:block; font-weight:600; margin-bottom:4px; word-break:break-word;
-    }
-    .export-table .cell-time{
-      display:block; font-variant-numeric:tabular-nums; color:#374151;
-    }
-    .export-green{ background: var(--green); }
-    .export-red{ background: var(--red); }
-    .export-yellow{ background: var(--yellow); }
   </style>
 
   <!-- html2canvas（DOM 轉成圖片） -->
@@ -165,17 +119,16 @@
 <body>
   <header>
     <div class="container">
-      <h1>展示頁</h1>
+      <h1>BOSS時間</h1>
       <div class="toolbar">
         <button id="reload">重新讀取</button>
         <a class="btn" href="./name.html">編輯排序（name.html）</a>
         <a class="btn" href="./time.html">編輯時間（time.html）</a>
-        <button id="download-cards">下載 PNG（卡片）</button>
-        <button id="download-table">下載 PNG（表格）</button>
+        <button id="download-cards">匯出BOSS時間圖表</button>
         <div class="legend" style="margin-left:8px">
-          <span class="chip green">已重生</span>
-          <span class="chip red">今天已過去</span>
-          <span class="chip yellow">未來中最接近現在</span>
+          <span class="chip green">存活</span>
+          <span class="chip red">超時</span>
+          <span class="chip yellow">即將重生</span>
         </div>
         <span id="meta" class="meta" aria-live="polite" style="margin-left:auto"></span>
       </div>
