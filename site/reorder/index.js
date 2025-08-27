@@ -171,7 +171,7 @@ async function downloadPNG(){
   const MAX_HEIGHT = 400;               // ← 想要的最大欄高（px）可自行調整
 
   // 一欄可以放幾張（直向）
-  const perCol = 20; //Math.max(1, Math.floor((MAX_HEIGHT + GAP) / (CARD_H + GAP)));
+  const perCol = 20; //Math.max(1, Math.floor((MAX_HEIGHT + GAP) / (CARD_H + GAP)))
   const totalCols = Math.ceil(cards.length / perCol);
 
   // 2) 建立螢幕外容器，用 grid 直向擺放
