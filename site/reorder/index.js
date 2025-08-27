@@ -1,7 +1,5 @@
 // site/index.js
-// 依賴：common.js、html2canvas（在 index.html 以 <script> 引入）
-
-import { fetchDataJSON, fetchLastCommitTime, currentFileLabel } from './site/reorder/common.js';
+import { fetchDataJSON, saveDataJSON, currentFileLabel } from './common.js';
 
 /* ========== DOM 取得 ========== */
 const $list  = document.getElementById('list');
