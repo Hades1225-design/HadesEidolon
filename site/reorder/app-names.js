@@ -91,19 +91,20 @@ function render(){
       items[i][0] = e.target.value;
     });
 
-    // 新增（複製目前時間）
+    // 動作按鈕容器（第三欄）
+    const actions = document.createElement('div');
+    actions.className = 'actions';
+
     const btnAdd = document.createElement('button');
     btnAdd.textContent = '新增';
     btnAdd.className = 'btn-add';
     btnAdd.addEventListener('click', ()=>{
       items.splice(i+1, 0, ['', items[i][1] ?? null]);
       render();
-      // 聚焦到新列
       const el = $list.querySelector(`.row:nth-child(${i+2}) .name-input`);
       el?.focus();
     });
 
-    // 刪除
     const btnDel = document.createElement('button');
     btnDel.textContent = '刪除';
     btnDel.className = 'btn-del';
@@ -112,11 +113,13 @@ function render(){
       render();
     });
 
-    row.append(idx, input, btnAdd, btnDel);
+    actions.append(btnAdd, btnDel);
+
+    // 一列只放三個欄位：idx / input / actions
+    row.append(idx, input, actions);
     $list.appendChild(row);
   });
 
-  // 綁拖曳
   bindDragSort();
 }
 
