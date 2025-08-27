@@ -100,6 +100,19 @@
       width: 185px;
       height: 30px;
     }
+    
+    /* 匯出用臨時容器：多欄直向 + 固定卡片尺寸 */
+.export-grid-dynamic{
+  position: fixed; left: -200vw; top: 0;   /* 螢幕外，避免閃爍 */
+  background: #fff;
+  display: grid;
+  gap: 4px;
+}
+.export-grid-dynamic .card{
+  margin: 0;
+  width: 185px;
+  height: 30px;
+}
 
     /* 表格匯出樣式（匯出時動態掛在暫存節點上） */
     .export-table-wrap{
