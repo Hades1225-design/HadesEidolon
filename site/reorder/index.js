@@ -154,57 +154,59 @@ function findNextClosestIndex(arr, nowHHmm){
 
 /* ========= 匯出 PNG（卡片：單欄直向顯示） ========= */
 /* ========= 匯出 PNG（卡片：直向排序 + 高度限制） ========= */
+/* ========= 匯出 PNG（卡片：直向排序，限制高度，超過往右側） ========= */
 async function downloadPNG(){
   if (!window.html2canvas) {
     alert("圖片匯出工具載入中，請再試一次。");
     return;
   }
 
-  const target = document.getElementById('list');
-  const originalClass = target.className;
+  // 1) 準備資料與尺寸
+  const cards = Array.from(document.querySelectorAll('#list .card'));
+  if (!cards.length) return;
 
-  // 匯出時切換為「多欄直向」模式
-  target.classList.add('export-vertical');
-  document.body.classList.add('exporting');
+  const CARD_W = 190;
+  const CARD_H = 35;
+  const GAP    = 8;
+  const MAX_HEIGHT = 2000;               // ← 想要的最大欄高（px）可自行調整
 
-  // 等字型載入，避免量測錯誤
-  if (document.fonts?.ready) { 
-    try { await document.fonts.ready; } catch {} 
-  }
-
-  // 設定單欄最大高度（px）
-  const MAX_HEIGHT = 800;
-
-  // 動態計算欄數
-  const cards = Array.from(target.querySelectorAll('.card'));
-  const cardHeight = 30 + 4; // 卡片高度 + gap
-  const perCol = Math.floor(MAX_HEIGHT / cardHeight);
+  // 一欄可以放幾張（直向）
+  const perCol = Math.max(1, Math.floor((MAX_HEIGHT + GAP) / (CARD_H + GAP)));
   const totalCols = Math.ceil(cards.length / perCol);
 
-  // 套用多欄 CSS
-  target.style.display = "grid";
-  target.style.gridTemplateColumns = `repeat(${totalCols}, 190px)`;
-  target.style.gridAutoRows = `${cardHeight - 8}px`; // 卡片高度
-  target.style.gap = "8px";
-  target.style.width = "max-content";
+  // 2) 建立螢幕外容器，用 grid 直向擺放
+  const wrap = document.createElement('div');
+  wrap.className = 'export-grid-dynamic';
+  wrap.style.gridTemplateColumns = `repeat(${totalCols}, ${CARD_W}px)`;
+  wrap.style.gridAutoRows = `${CARD_H}px`;
+  document.body.appendChild(wrap);
 
-  // 等待重排
-  await new Promise(r => setTimeout(r, 50));
+  // 3) 依「直向優先」把卡片 clone 進容器，並指定 row/col
+  cards.forEach((card, i) => {
+    const clone = card.cloneNode(true);
+    const col = Math.floor(i / perCol);       // 第幾欄（0-based）
+    const row = (i % perCol) + 1;             // 第幾列（1-based，grid-row 需要從 1 開始）
+    clone.style.gridColumn = (col + 1);
+    clone.style.gridRow = row;
+    wrap.appendChild(clone);
+  });
 
-  // 截圖
-  const canvas = await html2canvas(target, {
+  // 4) 等字型就緒、截圖
+  document.body.classList.add('exporting');   // 白底
+  if (document.fonts?.ready) { try { await document.fonts.ready; } catch {} }
+
+  const canvas = await html2canvas(wrap, {
     backgroundColor: '#ffffff',
     scale: 2,
     useCORS: true,
-    windowWidth: target.scrollWidth,
-    windowHeight: target.scrollHeight
+    windowWidth: wrap.scrollWidth,
+    windowHeight: wrap.scrollHeight
   });
 
   triggerDownload(canvas.toDataURL('image/png'), `cards_vertical_${stamp()}.png`);
 
-  // 還原樣式
-  target.className = originalClass;
-  target.removeAttribute("style");
+  // 5) 清理
+  document.body.removeChild(wrap);
   document.body.classList.remove('exporting');
 }
 
