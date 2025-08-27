@@ -12,15 +12,14 @@ const $btnDownload = document.getElementById('download-cards');
 const $linkName = document.getElementById('link-name');
 const $linkTime = document.getElementById('link-time');
 
-/* ========== 常數 ========== */
-const WRAP_CUTOFF = "0559";        // 00:00–05:59 視為隔日清晨（排序時往明天包）
+/* ========== 常數（移除清晨跨日規則） ========== */
 const CARD_W = 185;                // 匯出版卡片寬（需和 CSS 相同）
 const CARD_H = 35;                 // 匯出版卡片高（需和 CSS 相同）
 const GAP    = 8;                  // 匯出版卡片間距（與 .list gap 近似）
 const PER_COL = 20;                // 每欄 20 張（由上至下、再往右）
 
 /* ========== 狀態 ========== */
-let items = []; // [[name, time], ...]  time: null | "HHmm" | "YYYY-MM-DD HHmm"
+let items = []; // [[name, time], ...]  time: null | "YYYY-MM-DD HHmm"
 
 /* ========== 初始化 ========== */
 init(false);
@@ -33,15 +32,15 @@ async function init(manual){
     const arr = await fetchDataJSON();
     items = normalize(arr);
 
-    // 以「距離現在的分鐘差（循環 24h）」排序：
-    // null（已重生）最前 → 其他依 diffFromNow 由小到大
-    items.sort((a,b)=>{
-      const da = diffFromNow(a[1]);
-      const db = diffFromNow(b[1]);
-      if(a[1] === null && b[1] === null) return 0;
-      if(a[1] === null) return -1;
-      if(b[1] === null) return 1;
-      return da - db;
+    // 由舊到新排序；null 視為最舊（顯示為「存活」）
+    items.sort((a, b) => {
+      const ta = (a[1] == null) ? Number.NEGATIVE_INFINITY : epochMsFromAbsolute(a[1]);
+      const tb = (b[1] == null) ? Number.NEGATIVE_INFINITY : epochMsFromAbsolute(b[1]);
+
+      if (ta !== tb) return ta - tb;                  // 舊 → 新
+      const na = (a[0] ?? '').toString();
+      const nb = (b[0] ?? '').toString();
+      return na.localeCompare(nb, 'zh-Hant');         // 穩定排序
     });
 
     render();
@@ -49,11 +48,11 @@ async function init(manual){
     // 顯示檔名與最後更新時間
     const iso = await fetchLastCommitTime().catch(()=>null);
     const when = iso ? new Date(iso).toLocaleString() : '未知';
-    $meta.textContent = `檔案：${currentFileLabel()}　最後更新：${when}`;
+    if ($meta) $meta.textContent = `檔案：${currentFileLabel()}　最後更新：${when}`;
   }catch(e){
     items = [];
     render();
-    $meta.textContent = `讀取失敗：${e.message}`;
+    if ($meta) $meta.textContent = `讀取失敗：${e.message}`;
     if(manual) alert(`讀取失敗：${e.message}`);
     console.error(e);
   }
@@ -76,64 +75,35 @@ function normalize(arr){
     return ['', null];
   });
 }
+
+// 僅接受絕對日期時間 "YYYY-MM-DD HHmm"，其他一律轉為 null
 function unifyTime(t){
-  if(t == null || t === '') return null;
+  if(t == null) return null;
   if(typeof t !== 'string') return null;
   const s = t.trim();
-  if(/^\d{4}$/.test(s)) return s;                         // HHmm
-  if(/^\d{4}-\d{2}-\d{2}\s\d{4}$/.test(s)) return s;      // YYYY-MM-DD HHmm
-  return null;
+  return /^\d{4}-\d{2}-\d{2}\s\d{4}$/.test(s) ? s : null;
 }
 
-// 現在 HHmm / 分鐘
-function hhmmNow(){
-  const d = new Date();
-  return String(d.getHours()).padStart(2,'0') + String(d.getMinutes()).padStart(2,'0');
-}
-function nowMinutes(){
-  const d = new Date();
-  return d.getHours()*60 + d.getMinutes();
-}
-function HHmmToMinutes(hhmm){
-  const h = +hhmm.slice(0,2), m = +hhmm.slice(2,4);
-  return h*60 + m;
-}
-function toDisplay(hhmm){ return hhmm.slice(0,2) + ':' + hhmm.slice(2,4); }
-
-// 排序用：回傳相對現在的分鐘差（循環 24h）；null 放到最前
-function diffFromNow(time){
-  if(time === null) return -1e9;
-
-  // 支援 "YYYY-MM-DD HHmm"
-  let hhmm = time;
-  if(/^\d{4}-\d{2}-\d{2}\s\d{4}$/.test(time)) hhmm = time.slice(11);
-
-  const now = nowMinutes();
-  const tm  = HHmmToMinutes(hhmm);
-  const raw = tm - now;
-  const isEarlyMorning = hhmm <= WRAP_CUTOFF;
-  if(raw < 0 && isEarlyMorning){
-    // 清晨（<= 05:59），若已過去，視為明天清晨
-    return raw + 1440;
-  }
-  return raw;
+// 由絕對時間字串取毫秒值（假設已通過 unifyTime）
+function epochMsFromAbsolute(timeStr){
+  const yyyy = +timeStr.slice(0, 4);
+  const mm   = +timeStr.slice(5, 7);
+  const dd   = +timeStr.slice(8, 10);
+  const HH   = +timeStr.slice(11, 13);
+  const MM   = +timeStr.slice(13, 15);
+  return new Date(yyyy, mm - 1, dd, HH, MM, 0, 0).getTime();
 }
 
 // 找出「未來中最接近現在」的 index（用於標記黃色）
 function findNextClosestIndex(arr){
-  const now = nowMinutes();
-  let bestIdx = -1, bestDelta = Infinity;
+  const nowMs = Date.now();
+  let bestIdx = -1, bestTs = Infinity;
 
   arr.forEach(([_, time], idx)=>{
-    if(time === null) return;
-    let hhmm = time;
-    if(/^\d{4}-\d{2}-\d{2}\s\d{4}$/.test(time)) hhmm = time.slice(11);
-    if(!/^\d{4}$/.test(hhmm)) return;
-
-    const tm = HHmmToMinutes(hhmm);
-    const delta = (tm - now + 1440) % 1440; // 0..1439
-    if(delta > 0 && delta < bestDelta){
-      bestDelta = delta;
+    if(time == null) return;                      // 存活不計入未來判定
+    const ts = epochMsFromAbsolute(time);
+    if (ts >= nowMs && ts < bestTs) {
+      bestTs = ts;
       bestIdx = idx;
     }
   });
@@ -142,9 +112,10 @@ function findNextClosestIndex(arr){
 
 /* ========== 畫面渲染 ========== */
 function render(){
+  if (!$list) return;
   $list.innerHTML = '';
-  const nowHHmm = hhmmNow();
   const nextIdx = findNextClosestIndex(items);
+  const nowMs = Date.now();
 
   items.forEach(([name, time], idx)=>{
     const card = document.createElement('div');
@@ -158,19 +129,18 @@ function render(){
     elTime.className = 'time';
 
     if(time === null){
-      elTime.textContent = '已重生';
+      elTime.textContent = '存活';               // NULL → 存活（綠）
       card.classList.add('status-green');
     }else{
-      let hhmm = time;
-      if(/^\d{4}-\d{2}-\d{2}\s\d{4}$/.test(time)) hhmm = time.slice(11);
-      elTime.textContent = toDisplay(hhmm);
+      // 顯示 HH:mm
+      const hhmm = time.slice(11);
+      elTime.textContent = hhmm.slice(0,2) + ':' + hhmm.slice(2,4);
 
-      const raw = HHmmToMinutes(hhmm) - nowMinutes();
-      const isEarlyMorning = hhmm <= WRAP_CUTOFF;
-      if(raw < 0 && !isEarlyMorning){
-        card.classList.add('status-red');       // 今天已過去
-      }else if(idx === nextIdx){
-        card.classList.add('status-yellow');    // 未來中最近
+      const ts = epochMsFromAbsolute(time);
+      if (ts < nowMs) {
+        card.classList.add('status-red');        // 過去 → 淡紅
+      } else if (idx === nextIdx) {
+        card.classList.add('status-yellow');     // 未來最近 → 淡黃
       }
     }
 
