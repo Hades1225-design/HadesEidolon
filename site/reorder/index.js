@@ -1,3 +1,5 @@
+document.addEventListener("DOMContentLoaded", setupSharedLinks);
+
 /* === GitHub 讀檔設定（Contents API 直讀） === */
 const GH_OWNER  = "Hades1225-design";
 const GH_REPO   = "HadesEidolon";
