@@ -6,7 +6,7 @@
   <title>天堂 - BOSS時間 - 編輯排序（名字）</title>
   <link rel="stylesheet" href="./editor.css" />
   <style>
-    /* 讓名字編輯器呈現四欄：編號 / 名字 / 動作 / 時間(隱藏) */
+    /* 四欄：編號 / 名字 / 動作 / 時間(隱藏) */
     .row{ grid-template-columns: 3em 1fr 8.5em 0; }
     .row > :last-child{ display:none; } /* 隱藏時間欄 */
     .actions{ display:flex; gap:6px; justify-content:flex-end; }
@@ -16,11 +16,10 @@
 <body>
   <header>
     <div class="container">
-      <h1>編輯排序（名字）</h1>
+      <h1>編輯排序</h1>
       <div class="toolbar">
         <button id="reload">重新讀取</button>
-        <button id="add">新增一列</button>
-        <button id="sortAZ">A→Z 排序（名字）</button>
+        <!-- 已移除：新增一列 / A→Z 排序 -->
         <button id="save" style="margin-left:auto">儲存到伺服器</button>
         <a class="btn" href="./index.html">回首頁</a>
         <span id="meta" class="muted" aria-live="polite"></span>
@@ -30,7 +29,7 @@
 
   <main class="container">
     <p class="muted" style="margin-top:8px">
-      可拖曳整列改變順序；點選名字可直接編輯；可用右側按鈕新增/刪除。
+      可拖曳整列改變順序；點選名字可直接編輯；每列右側可新增/刪除。
     </p>
     <div id="list" class="list" aria-live="polite"></div>
   </main>
