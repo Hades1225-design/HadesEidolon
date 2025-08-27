@@ -4,15 +4,24 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>天堂 - BOSS時間 - 編輯排序（名字）</title>
+
   <link rel="stylesheet" href="./editor.css" />
-  <script type="module" src="./app-names.js"></script>
+
   <style>
-    /* 四欄：編號 / 名字 / 動作 / 時間(隱藏) */
-    .row{ grid-template-columns: 3em 1fr 8.5em 0; }
-    .row > :last-child{ display:none; } /* 隱藏時間欄 */
-    .actions{ display:flex; gap:6px; justify-content:flex-end; }
-    .actions button{ padding:6px 10px; border-radius:8px; }
+    /* 三欄：編號 / 名字 / 動作（新增、刪除） */
+    .row{
+      grid-template-columns: 3em 1fr 8.5em;
+    }
+    .actions{
+      display:flex; gap:6px; justify-content:flex-end;
+    }
+    .actions button{
+      padding:6px 10px; border-radius:8px;
+    }
   </style>
+
+  <!-- 只載入一次 -->
+  <script type="module" src="./app-names.js"></script>
 </head>
 <body>
   <header>
@@ -21,7 +30,6 @@
       <h1>編輯排序</h1>
       <div class="toolbar">
         <button id="reload">重新讀取</button>
-        <!-- 已移除：新增一列 / A→Z 排序 -->
         <button id="save">儲存到伺服器</button>
         <a id="goHomeAfterSave" class="btn" style="margin-left:auto">回首頁</a>
         <span id="meta" class="muted" aria-live="polite"></span>
@@ -35,7 +43,5 @@
     </p>
     <div id="list" class="list" aria-live="polite"></div>
   </main>
-
-  <script type="module" src="./app-names.js"></script>
 </body>
 </html>
