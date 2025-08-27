@@ -1,5 +1,8 @@
 // site/reorder/app-names.js
-import { fetchDataJSON, saveDataJSON, currentFileLabel } from './common.js';
+import {
+  fetchDataJSON, saveDataJSON, currentFileLabel,
+  fetchLastCommitTime, urlWithFile, goHomeAfterSave
+} from './common.js';
 
 const $list = document.getElementById('list');
 const $meta = document.getElementById('meta');
