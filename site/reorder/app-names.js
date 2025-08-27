@@ -89,4 +89,13 @@ async function onSave(){
   }catch(e){
     alert(`儲存失敗：${e.message}`);
   }
+
+async function saveData() {
+  await saveToServer();
+  goHome();
+}
+
+document.getElementById("save").addEventListener("click", saveData);
+document.addEventListener("DOMContentLoaded", setupSharedLinks);
+
 }
