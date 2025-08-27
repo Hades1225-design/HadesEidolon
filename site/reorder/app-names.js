@@ -179,7 +179,7 @@ async function onSave(){
     await saveDataJSON(dataToSave, "update names");
 
     // 儲存成功後回首頁（保留 ?file）
-    goHomeAfterSave('../../index.html');
+    goHomeAfterSave('./index.html');
   }catch(e){
     alert(`儲存失敗：${e.message}`);
     console.error(e);
