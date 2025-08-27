@@ -7,7 +7,7 @@ import {
 /* ========== 回首頁按鈕（自動帶 ?file） ========== */
 const $goHome = document.getElementById('goHomeAfterSave');
 if ($goHome) {
-  const homeURL = urlWithFile('../../index.html');    // 從 /site/reorder/ 回到 /site/index.html
+  const homeURL = urlWithFile('./index.html');    // 從 /site/reorder/ 回到 /site/index.html
   $goHome.href = homeURL;
   $goHome.addEventListener('click', (e) => {
     e.preventDefault();
@@ -151,7 +151,6 @@ async function onSave(){
     });
 
     await saveDataJSON(out, "update times");
-    alert('儲存成功！');
     // 保留 ?file 參數回首頁（只呼叫一次）
     goHomeAfterSave('./index.html');
 
