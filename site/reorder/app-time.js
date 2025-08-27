@@ -58,7 +58,7 @@ function render(){
     idxCell.className = 'idx';
     idxCell.textContent = idx + 1;
 
-    // 名字（純文字，不能編輯）
+    // 名字（純文字，不可編輯）
     const nameCell = document.createElement('div');
     nameCell.className = 'name-cell';
     nameCell.textContent = name;
@@ -70,13 +70,13 @@ function render(){
     input.value = t ?? '';
     input.placeholder = 'HHmm';
 
-    // 輸入時自動補 0，限制 4 位數
+    // 僅允許 4 位數字，自動補 0
     input.addEventListener('input', e => {
       let v = e.target.value.replace(/\D/g,'').slice(0,4);
       e.target.value = v;
     });
 
-    // 按 Enter → 跳到下一個時間欄位
+    // Enter → 跳到下一欄
     input.addEventListener('keydown', e => {
       if(e.key === 'Enter'){
         const inputs = [...document.querySelectorAll('.time-input')];
