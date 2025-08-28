@@ -112,8 +112,43 @@ function render(){
       items.splice(i, 1);
       render();
     });
+    
+    
+ 
+    const btnDel = document.createElement('button');
+    btnDel.type = 'button';
+    btnDel.textContent = '刪除';
+    btnDel.className = 'btn-del';
+    btnDel.addEventListener('click', ()=>{
+      items.splice(i, 1);
+      render();
+    });
 
-    actions.append(btnAdd, btnDel);
+    // ↑ 上移
+    const btnUp = document.createElement('button');
+    btnUp.type = 'button';
+    btnUp.textContent = '上移';
+    btnUp.className = 'btn-move';
+    btnUp.addEventListener('click', ()=>{
+      if(i <= 0) return;
+      const [m] = items.splice(i, 1);
+      items.splice(i-1, 0, m);
+      render();
+    });
+
+    // ↓ 下移
+    const btnDown = document.createElement('button');
+    btnDown.type = 'button';
+    btnDown.textContent = '下移';
+    btnDown.className = 'btn-move';
+    btnDown.addEventListener('click', ()=>{
+      if(i >= items.length - 1) return;
+      const [m] = items.splice(i, 1);
+      items.splice(i+1, 0, m);
+      render();
+    });
+
+    actions.append(btnAdd, btnDel, btnUp, btnDown);
 
     // 一列只放三個欄位：idx / input / actions
     row.append(idx, input, actions);
