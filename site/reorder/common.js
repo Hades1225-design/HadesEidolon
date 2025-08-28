@@ -34,7 +34,8 @@ export function currentFileLabel() {
 export async function fetchDataJSON() {
   const path = getFileParam();
   // 直接從 /public/xxx.json 抓檔案
-  const url = `/${path}?ts=${Date.now()}`;
+  const repoBase = window.location.pathname.split('/')[1]; 
+  const url = `${window.location.origin}/${repoBase}/${path}?ts=${Date.now()}`;
   const res = await fetch(url, { cache: "no-store" });
 
   if (!res.ok) {
