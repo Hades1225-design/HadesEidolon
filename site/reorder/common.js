@@ -1,74 +1,82 @@
 // ===== site/reorder/common.js =====
 // 共用：讀寫 GitHub JSON（支援多檔）、保留 ?file 參數、回首頁工具。
-// 已優化：所有讀取統一走 GitHub API，確保即時資料。
+// 支援：路徑式/參數式 指定 JSON；優先走 Worker 讀取即時資料。
 
 /* ----------------- 可調整區 ----------------- */
-// Cloudflare Worker「儲存 API」端點（POST）
-export const WORKER_ENDPOINT =
-  "https://hadeseidolon-json-saver.b5cp686csv.workers.dev/api/save";
+// Cloudflare Worker 端點
+export const WORKER_ENDPOINT      = "https://hadeseidolon-json-saver.b5cp686csv.workers.dev/api/save";
+export const WORKER_READ_ENDPOINT = "https://hadeseidolon-json-saver.b5cp686csv.workers.dev/api/read";
 
-// Cloudflare Worker「讀取 API」端點（GET）
-export const WORKER_READ_ENDPOINT =
-  "https://hadeseidolon-json-saver.b5cp686csv.workers.dev/api/read";
-
-// GitHub Repo 設定
+//（備援）GitHub Repo 設定：只在 Worker 失敗時用
 const GH_OWNER  = "Hades1225-design";
 const GH_REPO   = "HadesEidolon";
 const GH_BRANCH = "main";
 /* ------------------------------------------- */
 
-/** 讀目前網址上的 ?file 參數（動態依子站推斷預設路徑） */
+/** 讀目前網址上的 JSON 路徑（回傳形如 "public/reorder/mikey465.json"） */
 export function getFileParam() {
   const qs = new URLSearchParams(location.search);
   let f = (qs.get("file") || "").trim();
 
-  // 依目前所在路徑 /site/<slug>/ 推斷預設 JSON
-  const pathParts = location.pathname.split("/").filter(Boolean);
-  const siteIdx = pathParts.findIndex(p => p === "site");
-  const slug = (siteIdx >= 0 && pathParts[siteIdx + 1]) ? pathParts[siteIdx + 1] : null;
+  // 依目前所在路徑 /site/<slug>/ 推斷預設 JSON：
+  // 例：/site/reorder/... → 預設 public/reorder/data.json
+  const parts   = location.pathname.split("/").filter(Boolean);
+  const idxSite = parts.findIndex(p => p === "site");
+  const slug    = (idxSite >= 0 && parts[idxSite + 1]) ? parts[idxSite + 1] : null;
   const DEFAULT_PATH = slug ? `public/${slug}/data.json` : "public/data.json";
 
-  // 沒帶 ?file → 用預設
-  if (!f) return DEFAULT_PATH;
+  // 1) 若帶 ?file= 優先使用它
+  if (f) {
+    // 僅檔名：mikey465 / mikey465.json
+    if (/^[A-Za-z0-9._\-]+(?:\.json)?$/.test(f)) {
+      if (!f.endsWith(".json")) f += ".json";
+      return slug ? `public/${slug}/${f}` : `public/${f}`;
+    }
+    // 含子路徑：reorder/mikey465.json 或 public/reorder/mikey465.json
+    if (/^(?:public\/)?[A-Za-z0-9._\-\/]+\.json$/.test(f)) {
+      return f.startsWith("public/") ? f : `public/${f}`;
+    }
+    // 非法 → 退回預設
+    return DEFAULT_PATH;
+  }
 
-  // 1) 僅檔名（?file=data.json）
-  if (/^[A-Za-z0-9._\-]+\.json$/.test(f)) {
-    f = slug ? `public/${slug}/${f}` : `public/${f}`;
-  }
-  // 2) 含子路徑但沒有 public/ 前綴
-  else if (/^[A-Za-z0-9._\-\/]+\.json$/.test(f) && !/^public\//.test(f)) {
-    f = "public/" + f.replace(/^\/+/, "");
+  // 2) 無 ?file= → 看路徑最後一段（支援省略 .json）
+  //   /site/reorder/mikey465        → public/reorder/mikey465.json
+  //   /site/reorder/mikey465.json   → public/reorder/mikey465.json
+  //   /site/reorder/ 或 /site/reorder/index.html → public/reorder/data.json
+  const last = parts[parts.length - 1] || "";
+  const isIndex = last === "" || last === "index.html";
+  if (isIndex) return DEFAULT_PATH;
+
+  if (/^[A-Za-z0-9._\-]+(?:\.json)?$/.test(last)) {
+    const name = last.endsWith(".json") ? last : `${last}.json`;
+    return slug ? `public/${slug}/${name}` : `public/${name}`;
   }
 
-  // 僅允許 public/ 下的 .json
-  if (!/^public\/[A-Za-z0-9._\-\/]+\.json$/.test(f)) {
-    f = DEFAULT_PATH;
-  }
-  return f;
+  // 其餘不認 → 預設
+  return DEFAULT_PATH;
 }
 
-/** 目前檔名（顯示用 Label） */
+/** 目前檔名（顯示用）："public/xxx/yyy.json" → "xxx/yyy.json" */
 export function currentFileLabel() {
-  const p = getFileParam();
-  return p.replace(/^public\//, "");
+  return getFileParam().replace(/^public\//, "");
 }
 
-// site/reorder/common.js ➋ 修改：fetchDataJSON() 改打 Worker
+/** 讀取 JSON（優先 Worker /api/read，其次 GitHub Contents API raw） */
 export async function fetchDataJSON() {
   const path = getFileParam();
 
-  // 1) 走 Worker 讀（即時 + 不受前端匿名 rate limit）
+  // 1) 走 Worker（即時、不受前端匿名 rate limit）
   try {
     const url = `${WORKER_READ_ENDPOINT}?path=${encodeURIComponent(path)}&ts=${Date.now()}`;
     const r = await fetch(url, { cache: "no-store" });
     if (r.ok) return await r.json();
-    // 若 Worker 回 502/403 等，往下備援
   } catch (e) {
     console.warn("Worker read failed:", e);
   }
 
-  // 2) 備援：GitHub Contents API raw（你目前的寫法）
-  const api = `https://api.github.com/repos/Hades1225-design/HadesEidolon/contents/${encodeURIComponent(path)}?ref=main&ts=${Date.now()}`;
+  // 2) 備援：GitHub Contents API raw
+  const api = `https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/contents/${encodeURIComponent(path)}?ref=${GH_BRANCH}&ts=${Date.now()}`;
   const res = await fetch(api, {
     headers: { "Accept": "application/vnd.github.v3.raw" },
     cache: "no-store"
@@ -76,30 +84,25 @@ export async function fetchDataJSON() {
   if (!res.ok) throw new Error(`HTTP ${res.status}（API 讀取 ${path} 失敗）`);
   const text = await res.text();
   try { return JSON.parse(text); }
-  catch { console.error("API JSON 原文：", text); throw new Error("API JSON 解析失敗"); }
+  catch {
+    console.error("API JSON 原文：", text);
+    throw new Error("API JSON 解析失敗");
+  }
 }
 
-/**
- * 存檔到 GitHub（透過 Cloudflare Worker）
- * @param {any} data - 會自動 JSON.stringify(, null, 2)
- * @param {string} message - commit 訊息
- * @returns {Promise<void>}
- */
+/** 存檔到 GitHub（透過 Worker /api/save） */
 export async function saveDataJSON(data, message = "update via web [skip ci]") {
   const path = getFileParam();
-
-  const payload = {
-    path,
-    content: JSON.stringify(data, null, 2),
-    message
-  };
-
   let res;
   try {
     res = await fetch(WORKER_ENDPOINT, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload)
+      body: JSON.stringify({
+        path,
+        content: JSON.stringify(data, null, 2),
+        message
+      })
     });
   } catch (e) {
     throw new Error(`Load failed（無法連線儲存伺服器）：${e.message}`);
@@ -114,33 +117,30 @@ export async function saveDataJSON(data, message = "update via web [skip ci]") {
   }
 }
 
-/** 取得目前檔案在 GitHub 的最後 commit 時間（ISO字串或 null） */
+/** 取得目前檔案的最後 commit 時間（GitHub API） */
 export async function fetchLastCommitTime() {
   const path = getFileParam();
-  const url =
-    `https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/commits?path=${encodeURIComponent(path)}&page=1&per_page=1`;
+  const url  = `https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/commits?path=${encodeURIComponent(path)}&page=1&per_page=1`;
   const r = await fetch(url, { cache: "no-store" });
   if (!r.ok) return null;
   const commits = await r.json();
-  return Array.isArray(commits) && commits.length
-    ? commits[0].commit.committer.date
-    : null;
+  return Array.isArray(commits) && commits.length ? commits[0].commit.committer.date : null;
 }
 
-/** 依目前的 ?file 參數產生某頁連結（會自動帶上 file） */
+/** 依目前 JSON 產生某頁連結（自動帶上 file，確保相容舊模式） */
 export function urlWithFile(relativeHref) {
-  const file = getFileParam();
+  const file = getFileParam(); // e.g. public/reorder/mikey465.json
   const u = new URL(relativeHref, location.href);
-  u.searchParams.set("file", file.replace(/^public\//, ""));
+  u.searchParams.set("file", file.replace(/^public\//, "")); // e.g. reorder/mikey465.json
   return u.toString();
 }
 
-/** 儲存成功後導回首頁（或你指定的頁面），保留 ?file 參數 */
+/** 儲存成功後導回首頁（或指定頁），保留目前檔案 */
 export function goHomeAfterSave(target = "./index.html") {
   location.href = urlWithFile(target);
 }
 
-/** 工具：限制輸入為 0-9（可搭配 time 編輯器） */
+/** 限制輸入為 0-9（time 編輯器可用） */
 export function onlyDigits(str) {
   return String(str || "").replace(/\D+/g, "");
 }
