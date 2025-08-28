@@ -22,9 +22,10 @@ header{
   border-bottom:1px solid var(--border);
 }
 .container{ max-width:960px; margin:0 auto; padding:14px 16px; }
-h1{ margin:0 0 10px; font-size:20px; }
+  h1{ margin:0 0 10px; font-size:20px; }
+/* 上方工具列 */
 .toolbar{ display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
-button, input, a.btn{
+  button, input, a.btn{
   padding:8px 10px;
   border:1px solid var(--border);
   border-radius:10px;
@@ -32,6 +33,7 @@ button, input, a.btn{
   color:var(--text);
   text-decoration:none;
   display:inline-block;
+  font-size:14px;
 }
 .muted{ color:var(--muted); font-size:12px; }
 
