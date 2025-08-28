@@ -1,5 +1,5 @@
-# HadesEidolon 專案總覽
-- logs/：每日計劃與備忘
-- ...
+# HadesEidolon - Lineage Boss Time
+- 排序Boss重生時間
+- 
 
-#111
+## Hades X Eidolon 共同創作
