@@ -30,17 +30,26 @@ export function currentFileLabel() {
   return p.replace(/^public\//, "");
 }
 
-// common.js
+// GitHub Contents API 讀取最新檔案
 export async function fetchDataJSON() {
-  const path = getFileParam();           // e.g. "public/data.json"
-  const url  = `https://raw.githubusercontent.com/${GH_OWNER}/${GH_REPO}/${GH_BRANCH}/${path}?ts=${Date.now()}`;
-  const res  = await fetch(url, {
-    // raw.githubusercontent.com 會尊重快取，但我們用 ts 和 no-store 保證用戶端不取舊 cache
-    cache: "no-store",
-    headers: { "Accept": "application/vnd.github.v3.raw" }
+  const path = getFileParam();
+  const url = `https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/contents/${encodeURIComponent(path)}?ref=${GH_BRANCH}&ts=${Date.now()}`;
+  const res = await fetch(url, {
+    headers: { "Accept": "application/vnd.github.v3.raw" },
+    cache: "no-store"
   });
-  if (!res.ok) throw new Error(`HTTP ${res.status}（讀取 ${path} 失敗）`);
-  return await res.json();
+
+  if (!res.ok) {
+    throw new Error(`HTTP ${res.status}（讀取 ${path} 失敗）`);
+  }
+
+  const text = await res.text();
+  try {
+    return JSON.parse(text);
+  } catch (e) {
+    console.error("data.json 原文：", text);
+    throw new Error("JSON 解析失敗：請檢查 data.json");
+  }
 }
 
 /**
