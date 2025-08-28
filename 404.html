@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Routing…</title>
+  <meta name="robots" content="noindex" />
+  <style>
+    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,"PingFang TC","Microsoft JhengHei",sans-serif;margin:0;padding:24px;color:#111}
+    .box{max-width:680px;margin:auto}
+    code{background:#f3f4f6;padding:2px 6px;border-radius:6px}
+  </style>
+</head>
+<body>
+  <div class="box">
+    <h1>Routing…</h1>
+    <p>正在導向正確頁面，請稍候。</p>
+  </div>
+  <script>
+    (function(){
+      // ===== 1) 推斷 GitHub Pages 的 repo base =====
+      // 兩種情境：
+      // - 專案頁: https://{user}.github.io/{REPO}/...  → repoBase = "/{REPO}/"
+      // - 個人頁: https://{user}.github.io/...         → repoBase = "/"
+      var segs = location.pathname.split('/').filter(Boolean);
+      var repoBase = "/";
+      // 如果第一段不是 "site"，視為專案頁，repoBase = "/{第一段}/"
+      if (segs[0] && segs[0] !== "site") repoBase = "/" + segs[0] + "/";
+
+      // 把 path 去掉前綴 repoBase，得到 repo 內相對路徑
+      function stripBase(pathname) {
+        if (pathname.startsWith(repoBase)) return pathname.slice(repoBase.length - 1);
+        return pathname;
+      }
+      var relPath = stripBase(location.pathname); // 例: "/site/reorder/data"
+
+      // ===== 2) 規則：/site/<slug>/<name>[.json] → /site/<slug>/?file=<name> =====
+      // 支援：
+      //   /site/reorder/data
+      //   /site/reorder/data.json
+      //   /site/reorder/mikey465
+      //   /site/reorder/mikey465.json
+      // 也允許 index.html 被直接打到子路由（仍走轉址）
+      var rePrettyNoExt = /^\/site\/([^\/]+)\/([^\/]+)\/?$/;          // /site/<slug>/<name>
+      var rePrettyWithExt = /^\/site\/([^\/]+)\/([^\/]+)\.json\/?$/;  // /site/<slug>/<name>.json
+
+      var m = relPath.match(rePrettyNoExt) || relPath.match(rePrettyWithExt);
+      if (m) {
+        var slug = m[1];        // 例如 reorder
+        var name = m[2];        // 例如 data 或 mikey465
+
+        // 組回專案完整路徑
+        var target = repoBase + "site/" + slug + "/?file=" + encodeURIComponent(name);
+
+        // 保留原本的 query（若已帶其它參數，維持 & 追加）
+        if (location.search) {
+          var qs = new URLSearchParams(location.search);
+          // 若同時帶了 file，以 URL 上為準；否則保留原參數
+          if (!qs.has("file")) {
+            // 已把 file 放在 target 了；其他參數接在後面
+            qs.forEach(function(v,k){
+              if (k !== "file") target += "&" + encodeURIComponent(k) + "=" + encodeURIComponent(v);
+            });
+          } else {
+            // 既有 file 就直接用既有的
+            target = repoBase + "site/" + slug + "/" + location.search;
+          }
+        }
+        // 保留 hash
+        if (location.hash) target += location.hash;
+
+        location.replace(target);
+        return;
+      }
+
+      // ===== 3) /site/<slug> or /site/<slug>/index.html → 不轉（交給子站處理）=====
+      var reSubsiteRoot = /^\/site\/([^\/]+)\/?(index\.html)?$/;
+      if (reSubsiteRoot.test(relPath)) {
+        // 讓子站自己的 index.html/404 還能運作
+        // 直接回到子站首頁（避免 GitHub Pages 的 404 畫面卡住）
+        var keep = repoBase + relPath.replace(/\/?index\.html$/, "/");
+        location.replace(keep + location.search + location.hash);
+        return;
+      }
+
+      // ===== 4) 其它 404：回專案根 =====
+      location.replace(repoBase);
+    })();
+  </script>
+</body>
+</html>
