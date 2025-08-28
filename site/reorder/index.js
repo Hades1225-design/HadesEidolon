@@ -14,9 +14,9 @@ const $linkTime = document.getElementById('link-time');
 
 /* ========== 常數（移除清晨跨日規則） ========== */
 const CARD_W = 185;                // 匯出版卡片寬（需和 CSS 相同）
-const CARD_H = 35;                 // 匯出版卡片高（需和 CSS 相同）
-const GAP    = 8;                  // 匯出版卡片間距（與 .list gap 近似）
-const PER_COL = 20;                // 每欄 20 張（由上至下、再往右）
+const CARD_H = 40;                 // 匯出版卡片高（需和 CSS 相同）
+const GAP    = 6;                  // 匯出版卡片間距（與 .list gap 近似）
+const PER_COL = 16;                // 每欄 16 張（由上至下、再往右）
 
 /* ========== 狀態 ========== */
 let items = []; // [[name, time], ...]  time: null | "YYYY-MM-DD HHmm"
@@ -172,6 +172,7 @@ async function onDownloadCards(){
     background: '#fff',
     display: 'grid',
     gap: `${GAP}px`,
+    padding: '6',
     gridAutoRows: `${CARD_H}px`,
     gridTemplateColumns: `repeat(${Math.ceil(cards.length / PER_COL)}, ${CARD_W}px)`
   });
