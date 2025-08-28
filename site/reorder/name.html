@@ -14,6 +14,13 @@
   .actions{ display:flex; gap:6px; justify-content:flex-end; flex-wrap:wrap; }
   .actions button{ padding:6px 10px; border-radius:8px; }
   .btn-move{ padding:6px 8px; } /* 上/下移小一點 */
+  
+  /* 手機優化：小螢幕時讓動作鈕更緊湊並避免溢出 */
+  @media (max-width: 480px){
+    .row{ gap:8px; }
+    .actions{ gap:4px; }
+    .actions button{ padding:6px 8px; }
+  }
   </style>
 
   <!-- 只載入一次 -->
@@ -35,7 +42,7 @@
 
   <main class="container">
     <p class="muted" style="margin-top:8px">
-      可拖曳整列改變順序；點選名字可直接編輯；每列右側可新增/刪除。
+      電腦：可拖曳整列改變順序。手機：請用右側「上移 / 下移」。點選名字可直接編輯；每列右側可新增 / 刪除。
     </p>
     <div id="list" class="list" aria-live="polite"></div>
   </main>
