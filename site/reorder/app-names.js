@@ -136,12 +136,14 @@ function bindDragSort(){
       fromIndex = +row.dataset.index;
       row.classList.add('ghost');
       e.dataTransfer?.setData('text/plain', String(fromIndex));
+      document.body.style.userSelect = 'none';
     });
 
     row.addEventListener('dragend', ()=>{
       draggingEl?.classList.remove('ghost');
       draggingEl = null;
       fromIndex = -1;
+      document.body.style.userSelect = '';
     });
 
     row.addEventListener('dragover', (e)=>{
