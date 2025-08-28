@@ -25,7 +25,7 @@ header{
   h1{ margin:0 0 10px; font-size:20px; }
 /* 上方工具列 */
 .toolbar{ display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
-  button, input, relood, a.btn{
+  button, input, reload, a.btn{
   padding:8px 10px;
   border:1px solid var(--border);
   border-radius:10px;
