@@ -1,10 +1,7 @@
 // ===== site/reorder/common.js =====
 // 共用：讀寫 GitHub JSON（支援多檔）、保留 ?file 參數、回首頁工具。
-// 已改為：直接從 /public/*.json 讀取檔案，不再走 GitHub API。
-// ===== site/reorder/common.js =====
-const GH_OWNER = "Hades1225-design";
-const GH_REPO = "HadesEidolon";
-const GH_BRANCH = "main";
+// 已優化：會依子站自動推斷預設 JSON 路徑。
+
 /* ----------------- 可調整區 ----------------- */
 // 你的 Cloudflare Worker「儲存 API」端點（POST）
 export const WORKER_ENDPOINT =
@@ -12,17 +9,34 @@ export const WORKER_ENDPOINT =
 
 /* ------------------------------------------- */
 
-/** 讀目前網址上的 ?file 參數（回傳檔名，預設 public/data.json） */
+/** 讀目前網址上的 ?file 參數（動態依子站推斷預設路徑） */
 export function getFileParam() {
   const qs = new URLSearchParams(location.search);
-  let f = qs.get("file") || "public/data.json";
-  // 若只給 xxx.json，幫補上 public/
-  if (/^[A-Za-z0-9._\-\/]+\.json$/.test(f) && !/^public\//.test(f)) {
+  let f = (qs.get("file") || "").trim();
+
+  // 依目前所在路徑 /site/<slug>/ 推斷預設 JSON
+  // 例：/site/reorder/... → 預設 public/reorder/data.json
+  const pathParts = location.pathname.split("/").filter(Boolean);
+  const siteIdx = pathParts.findIndex(p => p === "site");
+  const slug = (siteIdx >= 0 && pathParts[siteIdx + 1]) ? pathParts[siteIdx + 1] : null;
+  const DEFAULT_PATH = slug ? `public/${slug}/data.json` : "public/data.json";
+
+  // 沒帶 ?file → 用預設
+  if (!f) return DEFAULT_PATH;
+
+  // 1) 僅檔名（?file=data.json）
+  //    → 映射到 public/<slug>/<檔名>；若無 slug 則 public/<檔名>
+  if (/^[A-Za-z0-9._\-]+\.json$/.test(f)) {
+    f = slug ? `public/${slug}/${f.replace(/^\/+/, "")}` : `public/${f.replace(/^\/+/, "")}`;
+  }
+  // 2) 含子路徑但沒有 public/ 前綴（例：?file=reorder/bosslist.json）
+  else if (/^[A-Za-z0-9._\-\/]+\.json$/.test(f) && !/^public\//.test(f)) {
     f = "public/" + f.replace(/^\/+/, "");
   }
-  // 僅允許 public/*.json
+
+  // 最終安全檢查（僅允許 public/ 下的 .json）
   if (!/^public\/[A-Za-z0-9._\-\/]+\.json$/.test(f)) {
-    f = "public/data.json";
+    f = DEFAULT_PATH;
   }
   return f;
 }
@@ -33,14 +47,12 @@ export function currentFileLabel() {
   return p.replace(/^public\//, "");
 }
 
-// GitHub Contents API 讀取最新檔案
+/** 讀取 JSON（或 ?file 指定的檔案）→ 回傳 JS 資料 */
 export async function fetchDataJSON() {
   const path = getFileParam();
-  const url = `https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/contents/${encodeURIComponent(path)}?ref=${GH_BRANCH}&ts=${Date.now()}`;
-  const res = await fetch(url, {
-    headers: { "Accept": "application/vnd.github.v3.raw" },
-    cache: "no-store"
-  });
+  // 直接從 /public/...json 抓檔案
+  const url = `/${path}?ts=${Date.now()}`;
+  const res = await fetch(url, { cache: "no-store" });
 
   if (!res.ok) {
     throw new Error(`HTTP ${res.status}（讀取 ${path} 失敗）`);
@@ -50,8 +62,8 @@ export async function fetchDataJSON() {
   try {
     return JSON.parse(text);
   } catch (e) {
-    console.error("data.json 原文：", text);
-    throw new Error("JSON 解析失敗：請檢查 data.json");
+    console.error("JSON 原文：", text);
+    throw new Error("JSON 解析失敗");
   }
 }
 
@@ -65,7 +77,7 @@ export async function saveDataJSON(data, message = "update via web [skip ci]") {
   const path = getFileParam();
 
   const payload = {
-    path,                                // 例如 public/data.json 或 public/bosslist.json
+    path,                                // 例如 public/reorder/data.json
     content: JSON.stringify(data, null, 2),
     message
   };
@@ -92,8 +104,6 @@ export async function saveDataJSON(data, message = "update via web [skip ci]") {
 
 /** 取得目前檔案在 GitHub 的最後 commit 時間（ISO字串或 null） */
 export async function fetchLastCommitTime() {
-  // 改用 Worker 直接更新的結果，資料會即時反映在 Pages
-  // 因為走 /public/*.json，這裡還是透過 GitHub API 查最後更新時間
   const path = getFileParam();
   const url =
     `https://api.github.com/repos/Hades1225-design/HadesEidolon/commits?path=${encodeURIComponent(path)}&page=1&per_page=1`;
