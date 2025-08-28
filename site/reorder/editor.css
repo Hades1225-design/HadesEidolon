@@ -79,14 +79,17 @@ button, input, a.btn{
 }
 
 /* 動作按鈕區（名字編輯器專用） */
-.actions{
-  display:flex;
-  gap:6px;
-  justify-content:flex-end;
+.actions {
+  display: flex;
+  gap: 6px;
+  justify-content: flex-end;
+  flex-wrap: nowrap;  /* ⚡ 禁止換行 */
 }
-.actions button{
-  padding:6px 10px;
-  border-radius:8px;
+
+.actions button {
+  padding: 6px 8px;    /* 把寬度縮一點 */
+  border-radius: 8px;
+  white-space: nowrap; /* 確保文字不換行 */
 }
 
 /* 拖曳佔位 */
