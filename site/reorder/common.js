@@ -34,7 +34,7 @@ export function currentFileLabel() {
   return p.replace(/^public\//, "");
 }
 
-/** 讀取 JSON（raw.githubusercontent.com，免 Token）→ 回傳 JS 資料 */
+/** 讀取 JSON（raw.githubusercontent.com，免 Token）→ 回傳 JS 資料
 export async function fetchDataJSON() {
   const path = getFileParam(); // e.g. public/data.json or public/mikey465.json
   const rawURL =
@@ -52,6 +52,7 @@ export async function fetchDataJSON() {
     throw new Error("JSON 解析失敗");
   }
 }
+*/
 
 /**
  * 存檔到 GitHub（透過 Cloudflare Worker）
@@ -77,6 +78,17 @@ export async function saveDataJSON(data, message = "update via web [skip ci]") {
   } catch (e) {
     throw new Error(`Load failed（無法連線儲存伺服器）：${e.message}`);
   }
+  
+  export async function fetchDataJSON() {
+  const path = getFileParam(); 
+  const url = `/${path}?ts=${Date.now()}`;  // ← 直接抓 /public/xxx.json
+  const res = await fetch(url, { cache: "no-store" });
+
+  if (!res.ok) {
+    throw new Error(`HTTP ${res.status}（讀取 ${path} 失敗）`);
+  }
+  return JSON.parse(await res.text());
+}
 
   const text = await res.text();
   if (!res.ok) {
