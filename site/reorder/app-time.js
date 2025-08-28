@@ -1,29 +1,21 @@
 // site/reorder/app-time.js
-import {
-  fetchDataJSON, saveDataJSON, currentFileLabel,
-  fetchLastCommitTime, urlWithFile, goHomeAfterSave
-} from './common.js';
+import { fetchDataJSON, saveDataJSON, currentFileLabel,
+         fetchLastCommitTime, urlWithFile, goHomeAfterSave } from './common.js';
 
 const $goHome = document.getElementById('goHomeAfterSave');
-  if ($goHome) {
+if ($goHome) {
   const homeURL = urlWithFile('./index.html');
   $goHome.setAttribute('href', homeURL);
-  $goHome.addEventListener('click', (e) => {
-    e.preventDefault();             // 阻止預設 # 跳頂部
-    location.href = homeURL;        // 導回首頁，保留 ?file= 參數
-  });
+  $goHome.addEventListener('click', (e) => { e.preventDefault(); location.href = homeURL; });
 }
 
-/* ========== DOM ========== */
-const $list   = document.getElementById('list');
-const $meta   = document.getElementById('meta');
+const $list = document.getElementById('list');
+const $meta = document.getElementById('meta');
 const $reload = document.getElementById('reload');
-const $save   = document.getElementById('save');
+const $save = document.getElementById('save');
 
-/* ========== 狀態 ========== */
 let items = []; // [[name, time], ...] time: null | "HHmm" | "YYYY-MM-DD HHmm"
 
-/* ========== 初始化 ========== */
 init(false);
 $reload?.addEventListener('click', () => init(true));
 $save?.addEventListener('click', onSave);
@@ -33,8 +25,7 @@ async function init(manual){
     const arr = await fetchDataJSON();
     items = normalize(arr);
     render();
-
-    const iso  = await fetchLastCommitTime().catch(()=>null);
+    const iso = await fetchLastCommitTime().catch(()=>null);
     const when = iso ? new Date(iso).toLocaleString() : '未知';
     $meta.textContent = `檔案：${currentFileLabel()} · 共 ${items.length} 筆 · 最後更新：${when}`;
   }catch(e){
@@ -42,11 +33,9 @@ async function init(manual){
     const msg = `讀取失敗：${e.message}`;
     $meta.textContent = msg;
     if(manual) alert(msg);
-    console.error(e);
   }
 }
 
-/* ========== 轉換 / 正規化 ========== */
 function normalize(arr){
   if(!Array.isArray(arr)) return [];
   return arr.map(item=>{
@@ -67,18 +56,11 @@ function unifyTime(t){
   if(t == null || t === '') return null;
   if(typeof t !== 'string') return null;
   const s = t.trim();
-  if(/^\d{4}$/.test(s)) return s;                         // HHmm
-  if(/^\d{4}-\d{2}-\d{2}\s\d{4}$/.test(s)) return s;      // YYYY-MM-DD HHmm
+  if(/^\d{4}$/.test(s)) return s;
+  if(/^\d{4}-\d{2}-\d{2}\s\d{4}$/.test(s)) return s;
   return null;
 }
-function extractHHmm(t){
-  if(!t) return null;
-  if(/^\d{4}$/.test(t)) return t;
-  if(/^\d{4}-\d{2}-\d{2}\s\d{4}$/.test(t)) return t.slice(11);
-  return null;
-}
- 
-/* ========== 畫面 ========== */
+
 function render(){
   $list.innerHTML = '';
   items.forEach(([name, time], i)=>{
@@ -86,29 +68,21 @@ function render(){
 
     const idx = document.createElement('div'); idx.className='idx'; idx.textContent=i+1;
 
-    const nameCell = document.createElement('div');
-    nameCell.className='name-cell';
-    nameCell.textContent = name;
+    const nameCell = document.createElement('div'); nameCell.className='name-cell'; nameCell.textContent = name;
 
     const input = document.createElement('input');
-    input.className='time-input';
-    input.placeholder='HHmm';
-    input.inputMode = 'numeric';      // 行動裝置數字鍵盤
-    input.maxLength = 4;
+    input.className='time-input'; input.placeholder='HHmm';
     input.value = extractHHmm(time) ?? '';
-
     updateInputTitleWithAutoDate(input);
 
     input.addEventListener('input', e=>{
       e.target.value = applyDigitCapsStrict24(e.target.value);
       updateInputTitleWithAutoDate(e.target);
       if(e.target.value.length === 4) jumpNext(e.target);
-      items[i][1] = e.target.value || null;   // 暫存 HHmm（儲存時再帶日期）
+      items[i][1] = e.target.value || null;
     });
-
     input.addEventListener('keydown', e=>{
       if(e.key === 'Enter'){
-        e.preventDefault();
         e.target.value = applyDigitCapsStrict24(pad4(e.target.value));
         items[i][1] = e.target.value || null;
         updateInputTitleWithAutoDate(e.target);
@@ -121,8 +95,7 @@ function render(){
   });
 }
 
-/* ========== 輸入規則 ========== */
-// 嚴格 24 小時制：第2位在第1位為2時最多到3；第3位最多5
+/* 嚴格 24h（第2位在第1位為2時最多 3；第3位最多 5） */
 function applyDigitCapsStrict24(raw){
   const s = String(raw||'').replace(/\D/g,'').slice(0,4);
   const d = s.split('');
@@ -138,41 +111,35 @@ function jumpNext(cur){
   if(next){ next.focus(); next.select(); }
 }
 
-/* ========== 儲存：HHmm → 自動決定日期（-12h 規則） ========== */
+/* 儲存：HHmm → 決定日期（-12h 規則）→ 存 "YYYY-MM-DD HHmm" */
 async function onSave(){
   try{
     const out = items.map(([name, t])=>{
       if(!t) return [name, null];
-      if(/^\d{4}-\d{2}-\d{2}\s\d{4}$/.test(t)) return [name, t];   // 已含日期
+      if(/^\d{4}-\d{2}-\d{2}\s\d{4}$/.test(t)) return [name, t];
       const hhmm = applyDigitCapsStrict24(pad4(t));
-      const date = resolveNextDate(hhmm);                          // -12h 規則
+      const date = resolveNextDate(hhmm);              // -12h 規則
       return [name, `${date} ${hhmm}`];
     });
-
     await saveDataJSON(out, "update times");
-    // 保留 ?file 參數回首頁（只呼叫一次）
-    goHomeAfterSave('./index.html');
-
+    goHomeAfterSave('./index.html');                   // 保留 ?file
   }catch(e){
     alert(`儲存失敗：${e.message}`);
-    console.error(e);
   }
 }
 
-/* -12h 規則：若 HHmm 早於現在超過 12 小時 → 視為明天；否則視為今天 */
+/* -12h 規則：若 HHmm 晚現在超過 12 小時才視為明天，否則當今天 */
 function resolveNextDate(hhmm){
   const now = new Date();
   const h = +hhmm.slice(0,2), m = +hhmm.slice(2,4);
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate(), h, m, 0, 0);
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate(), h, m);
   const diffMin = (today - now)/60000;
-  if (diffMin >= 0) return toYMD(today);           // 之後 → 今天
-  if (Math.abs(diffMin) <= 720) return toYMD(today); // 已過去但在 12 小時內 → 今天
+  if (diffMin >= 0) return toYMD(today);          // 今天未來
+  if (Math.abs(diffMin) <= 720) return toYMD(today); // 今天過去但在 12 小時內，仍算今天
   return toYMD(new Date(today.getTime()+86400000));  // 超過 12 小時 → 明天
 }
-function toYMD(d){
-  const z=n=>String(n).padStart(2,'0');
-  return `${d.getFullYear()}-${z(d.getMonth()+1)}-${z(d.getDate())}`;
-}
+function toYMD(d){ const z=n=>String(n).padStart(2,'0'); return `${d.getFullYear()}-${z(d.getMonth()+1)}-${z(d.getDate())}`; }
+function extractHHmm(t){ if(!t) return null; return /^\d{4}$/.test(t)?t : (/^\d{4}-\d{2}-\d{2}\s\d{4}$/.test(t)? t.slice(11): null); }
 function updateInputTitleWithAutoDate(input){
   const v = applyDigitCapsStrict24(input.value||'');
   input.title = /^\d{4}$/.test(v) ? `將套用日期：${resolveNextDate(v)}` : '';
