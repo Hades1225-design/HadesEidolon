@@ -7,6 +7,10 @@
 export const WORKER_ENDPOINT =
   "https://hadeseidolon-json-saver.b5cp686csv.workers.dev/api/save";
 
+// Cloudflare Worker「讀取 API」端點（GET）
+export const WORKER_READ_ENDPOINT =
+  "https://hadeseidolon-json-saver.b5cp686csv.workers.dev/api/read";
+
 // GitHub Repo 設定
 const GH_OWNER  = "Hades1225-design";
 const GH_REPO   = "HadesEidolon";
@@ -49,27 +53,30 @@ export function currentFileLabel() {
   return p.replace(/^public\//, "");
 }
 
-/** 讀取 JSON（或 ?file 指定的檔案）→ 回傳 JS 資料 */
+// site/reorder/common.js ➋ 修改：fetchDataJSON() 改打 Worker
 export async function fetchDataJSON() {
   const path = getFileParam();
-  const api = `https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/contents/${encodeURIComponent(path)}?ref=${GH_BRANCH}&ts=${Date.now()}`;
 
+  // 1) 走 Worker 讀（即時 + 不受前端匿名 rate limit）
+  try {
+    const url = `${WORKER_READ_ENDPOINT}?path=${encodeURIComponent(path)}&ts=${Date.now()}`;
+    const r = await fetch(url, { cache: "no-store" });
+    if (r.ok) return await r.json();
+    // 若 Worker 回 502/403 等，往下備援
+  } catch (e) {
+    console.warn("Worker read failed:", e);
+  }
+
+  // 2) 備援：GitHub Contents API raw（你目前的寫法）
+  const api = `https://api.github.com/repos/Hades1225-design/HadesEidolon/contents/${encodeURIComponent(path)}?ref=main&ts=${Date.now()}`;
   const res = await fetch(api, {
     headers: { "Accept": "application/vnd.github.v3.raw" },
     cache: "no-store"
   });
-
-  if (!res.ok) {
-    throw new Error(`HTTP ${res.status}（API 讀取 ${path} 失敗）`);
-  }
-
+  if (!res.ok) throw new Error(`HTTP ${res.status}（API 讀取 ${path} 失敗）`);
   const text = await res.text();
-  try {
-    return JSON.parse(text);
-  } catch (e) {
-    console.error("API JSON 原文：", text);
-    throw new Error("API JSON 解析失敗");
-  }
+  try { return JSON.parse(text); }
+  catch { console.error("API JSON 原文：", text); throw new Error("API JSON 解析失敗"); }
 }
 
 /**
