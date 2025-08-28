@@ -40,7 +40,7 @@
     .list{
       display: grid;
       grid-auto-flow: column;            /* 先填滿列（rows），再換欄 */
-      grid-template-rows: repeat(15, 40px); /* ← 固定 15 列，每列高 40px（=卡片高） */
+      grid-template-rows: repeat(16, 40px); /* ← 固定 15 列，每列高 40px（=卡片高） */
       grid-auto-columns: 185px;          /* 每一欄寬度固定 185px（=卡片寬） */
       gap: 6px;
     
@@ -50,14 +50,13 @@
       justify-content: start;
       align-content: start;
     
-      margin-top: 12px;
-      padding-bottom: 8px;
+      margin-top: 6px;
+      padding-bottom: 6px;
     }
     
     /* 卡片與匯出一致的尺寸 */
     .card{
-      display: flex; align-items: stretch; justify-content: space-between;
-      
+      display: flex; align-items: center; justify-content: space-between;
       width: 185px;
       height: 40px;
       padding: 6px 6px;
@@ -75,7 +74,7 @@
       flex: 1;
       word-break: break-word;
       margin: 0;
-      line-Height: 1;
+      line-height: 1;
       display:flex;
       align-items:center;
     }
