@@ -1,16 +1,12 @@
 // ===== site/reorder/common.js =====
-// 共用：讀/寫 GitHub JSON（支援多檔）、保留 ?file 參數、回首頁工具。
-// 以 ES Module 匯出，請用 <script type="module"> 載入使用。
+// 共用：讀寫 GitHub JSON（支援多檔）、保留 ?file 參數、回首頁工具。
+// 已改為：直接從 /public/*.json 讀取檔案，不再走 GitHub API。
 
 /* ----------------- 可調整區 ----------------- */
 // 你的 Cloudflare Worker「儲存 API」端點（POST）
 export const WORKER_ENDPOINT =
   "https://hadeseidolon-json-saver.b5cp686csv.workers.dev/api/save";
 
-// GitHub 讀檔（改用 raw.githubusercontent.com）
-const GH_OWNER  = "Hades1225-design";
-const GH_REPO   = "HadesEidolon";
-const GH_BRANCH = "main";
 /* ------------------------------------------- */
 
 /** 讀目前網址上的 ?file 參數（回傳檔名，預設 public/data.json） */
@@ -34,36 +30,37 @@ export function currentFileLabel() {
   return p.replace(/^public\//, "");
 }
 
-/** 讀取 JSON（raw.githubusercontent.com，免 Token）→ 回傳 JS 資料
+/** 讀取 JSON（或 ?file 指定的檔案）→ 回傳 JS 資料 */
 export async function fetchDataJSON() {
-  const path = getFileParam(); // e.g. public/data.json or public/mikey465.json
-  const rawURL =
-    `https://raw.githubusercontent.com/${GH_OWNER}/${GH_REPO}/${GH_BRANCH}/${path}?ts=${Date.now()}`;
+  const path = getFileParam();
+  // 直接從 /public/xxx.json 抓檔案
+  const url = `/${path}?ts=${Date.now()}`;
+  const res = await fetch(url, { cache: "no-store" });
 
-  const res = await fetch(rawURL, { cache: "no-store" });
   if (!res.ok) {
     throw new Error(`HTTP ${res.status}（讀取 ${path} 失敗）`);
   }
+
+  const text = await res.text();
   try {
-    return await res.json();
+    return JSON.parse(text);
   } catch (e) {
-    const txt = await res.text().catch(()=>"(無法讀取原文)");
-    console.error("JSON 原文：", txt);
+    console.error("JSON 原文：", text);
     throw new Error("JSON 解析失敗");
   }
 }
-*/
 
 /**
  * 存檔到 GitHub（透過 Cloudflare Worker）
  * @param {any} data - 會自動 JSON.stringify(, null, 2)
  * @param {string} message - commit 訊息
+ * @returns {Promise<void>}
  */
 export async function saveDataJSON(data, message = "update via web [skip ci]") {
   const path = getFileParam();
 
   const payload = {
-    path,                                // 例如 public/data.json 或 public/mikey465.json
+    path,                                // 例如 public/data.json 或 public/bosslist.json
     content: JSON.stringify(data, null, 2),
     message
   };
@@ -78,17 +75,6 @@ export async function saveDataJSON(data, message = "update via web [skip ci]") {
   } catch (e) {
     throw new Error(`Load failed（無法連線儲存伺服器）：${e.message}`);
   }
-  
-  export async function fetchDataJSON() {
-  const path = getFileParam(); 
-  const url = `/${path}?ts=${Date.now()}`;  // ← 直接抓 /public/xxx.json
-  const res = await fetch(url, { cache: "no-store" });
-
-  if (!res.ok) {
-    throw new Error(`HTTP ${res.status}（讀取 ${path} 失敗）`);
-  }
-  return JSON.parse(await res.text());
-}
 
   const text = await res.text();
   if (!res.ok) {
@@ -97,14 +83,15 @@ export async function saveDataJSON(data, message = "update via web [skip ci]") {
     const msg = typeof detail === "string" ? detail : JSON.stringify(detail);
     throw new Error(`Load failed（HTTP ${res.status}） ${msg}`);
   }
-  // 如需結果可自行 JSON.parse(text)
 }
 
 /** 取得目前檔案在 GitHub 的最後 commit 時間（ISO字串或 null） */
 export async function fetchLastCommitTime() {
+  // 改用 Worker 直接更新的結果，資料會即時反映在 Pages
+  // 因為走 /public/*.json，這裡還是透過 GitHub API 查最後更新時間
   const path = getFileParam();
   const url =
-    `https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/commits?path=${encodeURIComponent(path)}&page=1&per_page=1`;
+    `https://api.github.com/repos/Hades1225-design/HadesEidolon/commits?path=${encodeURIComponent(path)}&page=1&per_page=1`;
   const r = await fetch(url, { cache: "no-store" });
   if (!r.ok) return null;
   const commits = await r.json();
