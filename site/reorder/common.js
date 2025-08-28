@@ -57,7 +57,9 @@ export async function fetchDataJSON() {
   }
 
   // 方案 B：直接抓 Pages 上的 /public/xxx.json
-  const pagesUrl = `/${path}?ts=${Date.now()}`;
+  // 自動補上專案子路徑（相對於 GitHub Pages）
+  const repoBase = window.location.pathname.split('/')[1];
+  const pagesUrl = `/${repoBase}/${path}?ts=${Date.now()}`;
   const r = await fetch(pagesUrl, { cache: "no-store" });
   if (!r.ok) throw new Error(`HTTP ${r.status}（讀取 ${path} 失敗）`);
   const t = await r.text();
