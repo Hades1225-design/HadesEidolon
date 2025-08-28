@@ -33,7 +33,7 @@ header{
   color:var(--text);
   text-decoration:none;
   display:inline-block;
-  font-size:14px;
+  font-size:20px;
 }
 .muted{ color:var(--muted); font-size:12px; }
 
