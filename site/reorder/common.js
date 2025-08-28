@@ -30,25 +30,17 @@ export function currentFileLabel() {
   return p.replace(/^public\//, "");
 }
 
-/** 讀取 JSON（或 ?file 指定的檔案）→ 回傳 JS 資料 */
+// common.js
 export async function fetchDataJSON() {
-  const path = getFileParam();
-  // 直接從 /public/xxx.json 抓檔案
-  const repoBase = window.location.pathname.split('/')[1]; 
-  const url = `${window.location.origin}/${repoBase}/${path}?ts=${Date.now()}`;
-  const res = await fetch(url, { cache: "no-store" });
-
-  if (!res.ok) {
-    throw new Error(`HTTP ${res.status}（讀取 ${path} 失敗）`);
-  }
-
-  const text = await res.text();
-  try {
-    return JSON.parse(text);
-  } catch (e) {
-    console.error("JSON 原文：", text);
-    throw new Error("JSON 解析失敗");
-  }
+  const path = getFileParam();           // e.g. "public/data.json"
+  const url  = `https://raw.githubusercontent.com/${GH_OWNER}/${GH_REPO}/${GH_BRANCH}/${path}?ts=${Date.now()}`;
+  const res  = await fetch(url, {
+    // raw.githubusercontent.com 會尊重快取，但我們用 ts 和 no-store 保證用戶端不取舊 cache
+    cache: "no-store",
+    headers: { "Accept": "application/vnd.github.v3.raw" }
+  });
+  if (!res.ok) throw new Error(`HTTP ${res.status}（讀取 ${path} 失敗）`);
+  return await res.json();
 }
 
 /**
