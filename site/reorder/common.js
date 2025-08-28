@@ -47,25 +47,27 @@ export function currentFileLabel() {
   return p.replace(/^public\//, "");
 }
 
-/** 讀取 JSON（或 ?file 指定的檔案）→ 回傳 JS 資料 */
-export async function fetchDataJSON() {
-  const path = getFileParam();
-  // 直接從 /public/...json 抓檔案
-  const url = `/${path}?ts=${Date.now()}`;
-  const res = await fetch(url, { cache: "no-store" });
-
-  if (!res.ok) {
-    throw new Error(`HTTP ${res.status}（讀取 ${path} 失敗）`);
+  /** 讀取 JSON（或 ?file 指定的檔案）→ 回傳 JS 資料 */
+  export async function fetchDataJSON() {
+    const path = getFileParam();
+    // 依目前路徑自動推斷 repo base（/HadesEidolon/ 或 /）
+    const parts = location.pathname.split('/').filter(Boolean);
+    const repoBase = parts.length > 0 ? `/${parts[0]}/` : '/';
+    const url = `${repoBase}${path}?ts=${Date.now()}`;
+    const res = await fetch(url, { cache: "no-store" });
+    const res = await fetch(url, { cache: "no-store" });
+  
+    if (!res.ok) {
+      throw new Error(`HTTP ${res.status}（讀取 ${path} 失敗）`);
+    }
+    const text = await res.text();
+    try {
+      return JSON.parse(text);
+    } catch (e) {
+      console.error("JSON 原文：", text);
+      throw new Error("JSON 解析失敗");
+    }
   }
-
-  const text = await res.text();
-  try {
-    return JSON.parse(text);
-  } catch (e) {
-    console.error("JSON 原文：", text);
-    throw new Error("JSON 解析失敗");
-  }
-}
 
 /**
  * 存檔到 GitHub（透過 Cloudflare Worker）
