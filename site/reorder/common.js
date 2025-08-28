@@ -1,7 +1,10 @@
 // ===== site/reorder/common.js =====
 // 共用：讀寫 GitHub JSON（支援多檔）、保留 ?file 參數、回首頁工具。
 // 已改為：直接從 /public/*.json 讀取檔案，不再走 GitHub API。
-
+// ===== site/reorder/common.js =====
+const GH_OWNER = "Hades1225-design";
+const GH_REPO = "HadesEidolon";
+const GH_BRANCH = "main";
 /* ----------------- 可調整區 ----------------- */
 // 你的 Cloudflare Worker「儲存 API」端點（POST）
 export const WORKER_ENDPOINT =
