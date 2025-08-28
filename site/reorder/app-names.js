@@ -104,16 +104,6 @@ function render(){
       const el = $list.querySelector(`.row:nth-child(${i+2}) .name-input`);
       el?.focus();
     });
-
-    const btnDel = document.createElement('button');
-    btnDel.textContent = '刪除';
-    btnDel.className = 'btn-del';
-    btnDel.addEventListener('click', ()=>{
-      items.splice(i, 1);
-      render();
-    });
-    
-    
  
     const btnDel = document.createElement('button');
     btnDel.type = 'button';
