@@ -35,38 +35,37 @@
       padding:8px 10px; border:1px solid var(--border);
       border-radius:10px; background:#fff; color:#111; text-decoration:none; display:inline-block; cursor:pointer;
     }
-
     
-/* 讓前端顯示也固定每欄 20 張（由上到下，再往右） */
-.list{
-  display: grid;
-  grid-auto-flow: column;            /* 先填滿列（rows），再換欄 */
-  grid-template-rows: repeat(20, 35px); /* ← 固定 20 列，每列高 35px（=卡片高） */
-  grid-auto-columns: 185px;          /* 每一欄寬度固定 185px（=卡片寬） */
-  gap: 8px;
-
-  /* 捲動與對齊 */
-  overflow-x: auto;
-  overflow-y: hidden;
-  justify-content: start;
-  align-content: start;
-
-  margin-top: 12px;
-  padding-bottom: 4px;
-}
-
-/* 卡片與匯出一致的尺寸 */
-.card{
-  width: 185px;
-  height: 35px;
-  padding: 5px 6px;
-  display: flex; align-items: center; justify-content: space-between;
-  border: 1px solid var(--border);
-  border-radius: 5px;
-  background: var(--card-bg);
-  box-sizing: border-box;
-  margin: 0;                         /* 避免影響格線 */
-}
+    /* 讓前端顯示也固定每欄 20 張（由上到下，再往右） */
+    .list{
+      display: grid;
+      grid-auto-flow: column;            /* 先填滿列（rows），再換欄 */
+      grid-template-rows: repeat(15, 40px); /* ← 固定 15 列，每列高 40px（=卡片高） */
+      grid-auto-columns: 185px;          /* 每一欄寬度固定 185px（=卡片寬） */
+      gap: 6px;
+    
+      /* 捲動與對齊 */
+      overflow-x: auto;
+      overflow-y: hidden;
+      justify-content: start;
+      align-content: start;
+    
+      margin-top: 12px;
+      padding-bottom: 8px;
+    }
+    
+    /* 卡片與匯出一致的尺寸 */
+    .card{
+      width: 185px;
+      height: 40px;
+      padding: 6px 6px;
+      display: flex; align-items: center; justify-content: space-between;
+      border: 1px solid var(--border);
+      border-radius: 5px;
+      background: var(--card-bg);
+      box-sizing: border-box;
+      margin: 0;                         /* 避免影響格線 */
+    }
 
     .card .name{
       font-weight: 600;
@@ -104,18 +103,17 @@
     .exporting { background:#fff !important; }
     
     /* 匯出用臨時容器：多欄直向 + 固定卡片尺寸 */
-.export-grid-dynamic{
-  position: fixed; left: -200vw; top: 0;   /* 螢幕外，避免閃爍 */
-  background: #fff;
-  display: grid;
-  gap: 4px;
-}
-.export-grid-dynamic .card{
-  margin: 0;
-  width: 185px;
-  height: 30px;
-}
-
+    .export-grid-dynamic{
+      position: fixed; left: -200vw; top: 0;   /* 螢幕外，避免閃爍 */
+      background: #fff;
+      display: grid;
+      gap: 6px;
+    }
+    .export-grid-dynamic .card{
+      margin: 0;
+      width: 185px;
+      height: 40px;
+    }
   </style>
 
   <!-- html2canvas（DOM 轉成圖片） -->
