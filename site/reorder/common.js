@@ -55,8 +55,7 @@ export function currentFileLabel() {
     const repoBase = parts.length > 0 ? `/${parts[0]}/` : '/';
     const url = `${repoBase}${path}?ts=${Date.now()}`;
     const res = await fetch(url, { cache: "no-store" });
-    const res = await fetch(url, { cache: "no-store" });
-  
+    
     if (!res.ok) {
       throw new Error(`HTTP ${res.status}（讀取 ${path} 失敗）`);
     }
