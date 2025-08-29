@@ -1,1 +1,146 @@
 
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>PlansHub - 計劃總覽</title>
+  <link rel="stylesheet" href="./assets/style.css" />
+  <style>
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background-color: #fafafa;
+      color: #111;
+    }
+    header {
+      background: #fff;
+      padding: 12px 16px;
+      border-bottom: 1px solid #e5e7eb;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    h1 {
+      margin: 0;
+      font-size: 22px;
+    }
+    main {
+      max-width: 900px;
+      margin: 16px auto;
+      padding: 0 16px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 12px;
+    }
+    th, td {
+      padding: 10px 8px;
+      border-bottom: 1px solid #e5e7eb;
+      text-align: left;
+    }
+    th {
+      background-color: #f9fafb;
+      font-weight: bold;
+    }
+    .status-inbox {
+      color: #2563eb;
+      font-weight: bold;
+    }
+    .status-ongoing {
+      color: #16a34a;
+      font-weight: bold;
+    }
+    .status-done {
+      color: #6b7280;
+      text-decoration: line-through;
+    }
+    .progress-bar {
+      background: #e5e7eb;
+      border-radius: 4px;
+      height: 8px;
+      width: 100%;
+      overflow: hidden;
+    }
+    .progress-inner {
+      background: #3b82f6;
+      height: 100%;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>PlansHub 計劃總覽</h1>
+  </header>
+  <main>
+    <table id="plans-table">
+      <thead>
+        <tr>
+          <th>標題</th>
+          <th>領域</th>
+          <th>狀態</th>
+          <th>進度</th>
+          <th>更新時間</th>
+        </tr>
+      </thead>
+      <tbody id="plans-body">
+        <tr><td colspan="5">載入中...</td></tr>
+      </tbody>
+    </table>
+  </main>
+  <script>
+    async function loadPlans() {
+      const tbody = document.getElementById("plans-body");
+      try {
+        const res = await fetch("/public/planshub/index.json?ts=" + Date.now());
+        if (!res.ok) throw new Error("讀取失敗：" + res.status);
+        const data = await res.json();
+        tbody.innerHTML = "";
+
+        for (const plan of data.items) {
+          const tr = document.createElement("tr");
+
+          // 標題（連結到 plans/xxx.md）
+          const tdTitle = document.createElement("td");
+          const a = document.createElement("a");
+          a.href = plan.path;
+          a.textContent = plan.title;
+          a.target = "_blank";
+          tdTitle.appendChild(a);
+
+          // 領域
+          const tdArea = document.createElement("td");
+          tdArea.textContent = plan.area;
+
+          // 狀態
+          const tdStatus = document.createElement("td");
+          tdStatus.textContent = plan.status;
+          tdStatus.className = "status-" + plan.status;
+
+          // 進度
+          const tdProgress = document.createElement("td");
+          const bar = document.createElement("div");
+          bar.className = "progress-bar";
+          const inner = document.createElement("div");
+          inner.className = "progress-inner";
+          inner.style.width = plan.progress + "%";
+          bar.appendChild(inner);
+          tdProgress.appendChild(bar);
+
+          // 更新時間
+          const tdUpdated = document.createElement("td");
+          tdUpdated.textContent = plan.updated || "—";
+
+          tr.append(tdTitle, tdArea, tdStatus, tdProgress, tdUpdated);
+          tbody.appendChild(tr);
+        }
+      } catch (err) {
+        tbody.innerHTML = `<tr><td colspan="5">⚠️ 無法載入計劃資料：${err.message}</td></tr>`;
+        console.error(err);
+      }
+    }
+    loadPlans();
+  </script>
+</body>
+</html>
