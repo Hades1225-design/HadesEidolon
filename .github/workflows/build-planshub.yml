@@ -1,1 +1,44 @@
- 
+name: Build PlansHub index.json
+
+on:
+  push:
+    paths:
+      - 'site/PlansHub/plans/**'
+      - '.github/workflows/build-planshub.yml'
+      - 'tools/gen-plans-index.mjs'
+  workflow_dispatch:
+  schedule:
+    - cron: '17 3 * * *'  # optional daily refresh
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # needed for git log timestamps
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Generate index.json
+        run: |
+          node tools/gen-plans-index.mjs
+
+      - name: Commit & push
+        run: |
+          if git status --porcelain | grep -q 'public/planshub/index.json'; then
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add public/planshub/index.json
+            git commit -m "chore(PlansHub): update index.json [skip ci]"
+            git push
+          else
+            echo "No changes."
+          fi
