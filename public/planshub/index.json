@@ -1,70 +1,66 @@
 {
   "version": "2.0.0",
-  "generated_at": "2025-08-29T03:25:34.916423Z",
+  "generated_at": "2025-08-29T09:05:10.372Z",
   "items": [
     {
-      "id": "plan-2025-08-23-hackintosh-stability",
-      "title": "黑蘋果穩定化研究",
+      "id": "plan-2025-08-28-lineage-boss-time",
+      "title": "天堂 BOSS 時間管理系統",
+      "area": "web",
+      "priority": "P1",
+      "status": "ongoing",
+      "owner": "Hades",
+      "progress": 70,
+      "risk": "medium",
+      "due": null,
+      "tags": [
+        "[lineage",
+        "boss",
+        "time",
+        "reorder",
+        "json",
+        "github-pages]"
+      ],
+      "links": [],
+      "path": "plans/Lineage-Boss-Time.md",
+      "created": "Fri Aug 29",
+      "updated": "Fri Aug 29",
+      "preview": "## 目標",
+      "headings": [
+        "目標",
+        "任務",
+        "風險",
+        "下一步"
+      ]
+    },
+    {
+      "id": "plan-2025-08-23-hp800g5dm-thermal-vents",
+      "title": "\"HP800G5DM 機殼散熱孔設計與優化\"",
       "area": "hackintosh",
-      "priority": "P2",
-      "status": "inbox",
+      "priority": "P1",
+      "status": "done",
       "owner": "Hades",
-      "progress": 5,
-      "risk": "medium",
-      "due": null,
+      "progress": 100,
+      "risk": "high",
+      "due": "2025-09-10",
       "tags": [],
       "links": [],
-      "path": "plans/hackintosh-stability.md",
-      "created": "2025-08-23",
-      "updated": "2025-08-23",
+      "path": "plans/hp800g5dm-thermal-vents.md",
+      "created": null,
+      "updated": null,
       "preview": "## 目標",
       "headings": [
-        "目標"
-      ]
-    },
-    {
-      "id": "plan-2025-08-23-dialogue-journal",
-      "title": "《對話錄》節奏探索",
-      "area": "writing",
-      "priority": "P2",
-      "status": "inbox",
-      "owner": "Hades",
-      "progress": 10,
-      "risk": "low",
-      "due": null,
-      "tags": [],
-      "links": [],
-      "path": "plans/dialogue-journal-cadence.md",
-      "created": "2025-08-23",
-      "updated": "2025-08-23",
-      "preview": "## 目標",
-      "headings": [
-        "目標"
-      ]
-    },
-    {
-      "id": "plan-2025-08-23-ios18-voice",
-      "title": "iOS18 語音互動探索",
-      "area": "ios",
-      "priority": "P2",
-      "status": "inbox",
-      "owner": "Hades",
-      "progress": 15,
-      "risk": "medium",
-      "due": null,
-      "tags": [],
-      "links": [],
-      "path": "plans/ios18-voice-explore.md",
-      "created": "2025-08-23",
-      "updated": "2025-08-23",
-      "preview": "## 目標",
-      "headings": [
-        "目標"
+        "目標",
+        "成果摘要",
+        "里程碑",
+        "技術細節（摘要）",
+        "驗證與測試",
+        "文件與素材",
+        "後續建議"
       ]
     },
     {
       "id": "plan-2025-08-24-daily-planning",
-      "title": "每日計劃",
+      "title": "\"每日計劃\"",
       "area": "infra",
       "priority": "P2",
       "status": "inbox",
@@ -72,11 +68,16 @@
       "progress": 0,
       "risk": "medium",
       "due": null,
-      "tags": [],
+      "tags": [
+        "[daily",
+        "calendar",
+        "today-view",
+        "automation]"
+      ],
       "links": [],
       "path": "plans/daily-planning.md",
-      "created": "2025-08-24",
-      "updated": "2025-08-24",
+      "created": null,
+      "updated": null,
       "preview": "## 目標",
       "headings": [
         "目標",
@@ -94,27 +95,27 @@
       ]
     },
     {
-      "id": "plan-2025-08-25-nyxstream",
-      "title": "Project NyxStream",
-      "area": "web",
+      "id": "plan-2025-08-23-dialogue-journal",
+      "title": "《對話錄》節奏探索",
+      "area": "writing",
       "priority": "P2",
       "status": "inbox",
       "owner": "Hades",
-      "progress": 0,
-      "risk": "medium",
+      "progress": 10,
+      "risk": "low",
       "due": null,
-      "tags": [],
+      "tags": [
+        "[writing",
+        "cadence",
+        "research]"
+      ],
       "links": [],
-      "path": "plans/Project-NyxStream.md",
-      "created": "2025-08-25",
-      "updated": "2025-08-25",
+      "path": "plans/dialogue-journal-cadence.md",
+      "created": null,
+      "updated": null,
       "preview": "## 目標",
       "headings": [
-        "目標",
-        "背景",
-        "驗收標準",
-        "里程碑",
-        "下一步"
+        "目標"
       ]
     },
     {
@@ -127,11 +128,17 @@
       "progress": 60,
       "risk": "medium",
       "due": null,
-      "tags": [],
+      "tags": [
+        "[meta",
+        "infra",
+        "automation",
+        "github",
+        "planning-hub]"
+      ],
       "links": [],
       "path": "plans/planning-hub-meta.md",
-      "created": "2025-08-24",
-      "updated": "2025-08-25",
+      "created": null,
+      "updated": null,
       "preview": "## 目標",
       "headings": [
         "目標",
@@ -141,52 +148,82 @@
       ]
     },
     {
-      "id": "plan-2025-08-28-lineage-boss-time",
-      "title": "天堂 BOSS 時間管理系統",
-      "area": "web",
-      "priority": "P1",
-      "status": "ongoing",
+      "id": "plan-2025-08-23-ios18-voice",
+      "title": "iOS18 語音互動探索",
+      "area": "ios",
+      "priority": "P2",
+      "status": "inbox",
       "owner": "Hades",
-      "progress": 70,
+      "progress": 15,
       "risk": "medium",
       "due": null,
-      "tags": [],
+      "tags": [
+        "[voice",
+        "tts",
+        "stt",
+        "research]"
+      ],
       "links": [],
-      "path": "plans/Lineage-Boss-Time.md",
-      "created": "2025-08-26",
-      "updated": "2025-08-28",
+      "path": "plans/ios18-voice-explore.md",
+      "created": null,
+      "updated": null,
+      "preview": "## 目標",
+      "headings": [
+        "目標"
+      ]
+    },
+    {
+      "id": "plan-2025-08-25-nyxstream",
+      "title": "Project NyxStream",
+      "area": "web",
+      "priority": "P2",
+      "status": "inbox",
+      "owner": "Hades",
+      "progress": 0,
+      "risk": "medium",
+      "due": null,
+      "tags": [
+        "[AI",
+        "直播",
+        "短影音",
+        "Minecraft",
+        "天堂私服]"
+      ],
+      "links": [],
+      "path": "plans/Project-NyxStream.md",
+      "created": null,
+      "updated": null,
       "preview": "## 目標",
       "headings": [
         "目標",
-        "任務",
-        "風險",
+        "背景",
+        "驗收標準",
+        "里程碑",
         "下一步"
       ]
     },
     {
-      "id": "plan-2025-08-23-hp800g5dm-thermal-vents",
-      "title": "HP800G5DM 機殼散熱孔設計與優化",
+      "id": "plan-2025-08-23-hackintosh-stability",
+      "title": "黑蘋果穩定化研究",
       "area": "hackintosh",
-      "priority": "P1",
-      "status": "done",
+      "priority": "P2",
+      "status": "inbox",
       "owner": "Hades",
-      "progress": 100,
-      "risk": "high",
-      "due": "2025-09-10",
-      "tags": [],
+      "progress": 5,
+      "risk": "medium",
+      "due": null,
+      "tags": [
+        "[efi",
+        "power",
+        "research]"
+      ],
       "links": [],
-      "path": "plans/hp800g5dm-thermal-vents.md",
-      "created": "2025-08-23",
-      "updated": "2025-08-24",
+      "path": "plans/hackintosh-stability.md",
+      "created": null,
+      "updated": null,
       "preview": "## 目標",
       "headings": [
-        "目標",
-        "成果摘要",
-        "里程碑",
-        "技術細節（摘要）",
-        "驗證與測試",
-        "文件與素材",
-        "後續建議"
+        "目標"
       ]
     }
   ],
