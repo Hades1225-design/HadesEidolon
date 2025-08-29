@@ -93,7 +93,7 @@
     async function loadPlans() {
       const tbody = document.getElementById("plans-body");
       try {
-        const res = await fetch("/public/planshub/index.json?ts=" + Date.now());
+        const res = await fetch('../../public/planshub/index.json');
         if (!res.ok) throw new Error("讀取失敗：" + res.status);
         const data = await res.json();
         tbody.innerHTML = "";
