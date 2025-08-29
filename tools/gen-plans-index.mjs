@@ -13,7 +13,7 @@ const __dirname = dirname(__filename);
 // repo root presumed two levels up from tools/
 const repoRoot = join(__dirname, '..');
 
-const PLANS_DIR = join(repoRoot, 'site', 'PlansHub', 'plans');
+const PLANS_DIR = join(repoRoot, 'site', 'planshub', 'plans');
 const OUT_DIR   = join(repoRoot, 'public', 'planshub');
 const OUT_FILE  = join(OUT_DIR, 'index.json');
 
