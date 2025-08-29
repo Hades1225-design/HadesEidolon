@@ -20,6 +20,8 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
+          name: Ensure output dir
+          run: mkdir -p public/planshub
           fetch-depth: 0  # needed for git log timestamps
 
       - name: Setup Node
