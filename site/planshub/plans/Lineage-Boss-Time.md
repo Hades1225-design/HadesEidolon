@@ -5,7 +5,7 @@ area: web
 priority: P1
 status: ongoing
 owner: Hades
-progress: 70
+progress: 90
 risk: medium
 tags: [lineage, boss, time, reorder, json, github-pages]
 links:
