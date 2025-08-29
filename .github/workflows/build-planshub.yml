@@ -3,7 +3,7 @@ name: Build PlansHub index.json
 on:
   push:
     paths:
-      - 'site/PlansHub/plans/**'
+      - 'site/planshub/plans/**'
       - '.github/workflows/build-planshub.yml'
       - 'tools/gen-plans-index.mjs'
   workflow_dispatch:
@@ -20,9 +20,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          name: Ensure output dir
-          run: mkdir -p public/planshub
           fetch-depth: 0  # needed for git log timestamps
+
+      - name: Ensure output dir
+        run: mkdir -p public/planshub
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -30,17 +31,16 @@ jobs:
           node-version: '20'
 
       - name: Generate index.json
-        run: |
-          node tools/gen-plans-index.mjs
+        run: node tools/gen-plans-index.mjs
 
-      - name: Commit & push
+      - name: Commit & Push index.json
         run: |
-          if git status --porcelain | grep -q 'public/planshub/index.json'; then
-            git config user.name "github-actions[bot]"
-            git config user.email "github-actions[bot]@users.noreply.github.com"
-            git add public/planshub/index.json
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add public/planshub/index.json
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+          else
             git commit -m "chore(PlansHub): update index.json [skip ci]"
             git push
-          else
-            echo "No changes."
           fi
