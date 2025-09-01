@@ -1,30 +1,26 @@
 {
   "version": "2.0.0",
-  "generated_at": "2025-08-31T03:53:52.386Z",
+  "generated_at": "2025-09-01T01:20:56.261Z",
   "items": [
     {
-      "id": "plan-2025-08-28-lineage-boss-time",
+      "id": "lineage-boss-time",
       "title": "天堂 BOSS 時間管理系統",
       "area": "web",
       "priority": "P1",
       "status": "ongoing",
       "owner": "Hades",
-      "progress": 90,
+      "progress": 70,
       "risk": "medium",
       "due": null,
       "tags": [
-        "[lineage",
-        "boss",
-        "time",
-        "reorder",
-        "json",
-        "github-pages]"
+        "[web",
+        "planning-hub]"
       ],
       "links": [],
       "path": "plans/Lineage-Boss-Time.md",
       "created": "Fri Aug 29",
       "updated": "Fri Aug 29",
-      "preview": "## 目標",
+      "preview": "<!-- 以下保留你的原本內容（目標、里程碑、備註等） -->",
       "headings": [
         "目標",
         "任務",
