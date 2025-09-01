@@ -1,18 +1,17 @@
 ---
-id: plan-2025-08-28-lineage-boss-time
+id: lineage-boss-time
 title: 天堂 BOSS 時間管理系統
 area: web
 priority: P1
 status: ongoing
 owner: Hades
-progress: 90
+progress: 70
 risk: medium
-tags: [lineage, boss, time, reorder, json, github-pages]
-links:
-  - https://hades1225-design.github.io/HadesEidolon/site/reorder/index.html
-created: 2025-08-26
-updated: 2025-08-28
+created: 2025-08-22
+updated: 2025-09-01T00:00:00Z
+tags: [web, planning-hub]
 ---
+<!-- 以下保留你的原本內容（目標、里程碑、備註等） -->
 
 ## 目標
 開發並優化 **天堂 BOSS 時間管理系統**，用於快速管理各 BOSS 重生時間。  
